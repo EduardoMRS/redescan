@@ -7,54 +7,70 @@
              x:Class="RedeScan.UI.Views.MainView"
              x:DataType="vm:MainWindowViewModel">
 
-    <Grid ColumnDefinitions="240,*">
+    <Grid ColumnDefinitions="248,*">
 
-        <!-- Barra lateral -->
-        <Border Grid.Column="0" Background="{DynamicResource LayerFillColorDefaultBrush}">
+        <!-- ================= Barra lateral ================= -->
+        <Border Grid.Column="0" Classes="sidebar">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Top" Margin="16,18,16,12" Spacing="2">
-                    <TextBlock Text="RedeScan" Classes="h1" />
-                    <TextBlock Text="Análise &amp; Teste de Redes" Classes="subtle" />
-                </StackPanel>
+                <!-- Marca -->
+                <Border DockPanel.Dock="Top" Padding="20,20,20,16">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Classes="logo">
+                            <TextBlock Text="📡" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel VerticalAlignment="Center" Spacing="1">
+                            <TextBlock Text="RedeScan" Classes="h1" FontSize="20" />
+                            <TextBlock Text="Análise &amp; Teste de Redes" Classes="subtle" FontSize="11" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
 
                 <!-- Rodapé: alternar tema -->
                 <Button DockPanel.Dock="Bottom"
                         Classes="nav"
                         Command="{Binding ToggleThemeCommand}"
-                        Margin="6,2,6,12">
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock Text="🎨" />
-                        <TextBlock Text="Alternar tema" />
+                        Margin="12,2,12,16">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="🎨" FontSize="16" />
+                        <TextBlock Text="Alternar tema" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
 
-                <!-- Itens de navegação -->
-                <ScrollViewer>
-                    <ItemsControl ItemsSource="{Binding Pages}" Margin="0,8,0,0">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:ViewModelBase">
-                                <Button Classes="nav"
-                                        Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).NavigateCommand}"
-                                        CommandParameter="{Binding}">
-                                    <StackPanel Orientation="Horizontal" Spacing="10">
-                                        <TextBlock Text="{Binding Icon}" FontSize="16" />
-                                        <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </Button>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
+                <!-- Navegação (ListBox dá o destaque do item selecionado) -->
+                <ListBox Classes="nav"
+                         ItemsSource="{Binding Pages}"
+                         SelectedItem="{Binding CurrentPage}"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Padding="8,8">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ViewModelBase">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="{Binding Icon}" FontSize="16" Width="22"
+                                           HorizontalAlignment="Center" />
+                                <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
             </DockPanel>
         </Border>
 
-        <!-- Conteúdo do módulo ativo -->
-        <Border Grid.Column="1" Padding="24">
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Top"
-                           Classes="h1"
-                           Margin="0,0,0,16"
-                           Text="{Binding CurrentPage.Title}" />
+        <!-- ================= Conteúdo ================= -->
+        <Border Grid.Column="1" Classes="content">
+            <DockPanel Margin="28,24,28,24">
+                <!-- Cabeçalho da página -->
+                <Border DockPanel.Dock="Top" Margin="0,0,0,20">
+                    <StackPanel Orientation="Horizontal" Spacing="14">
+                        <Border Classes="pageIcon">
+                            <TextBlock Text="{Binding CurrentPage.Icon}" FontSize="22"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <TextBlock Classes="h1" VerticalAlignment="Center"
+                                   Text="{Binding CurrentPage.Title}" />
+                    </StackPanel>
+                </Border>
+
                 <ContentControl Content="{Binding CurrentPage}" />
             </DockPanel>
         </Border>

@@ -30,21 +30,33 @@ git tag -a v1.0.0 -m "RedeScan v1.0.0"
 git push origin v1.0.0
 ```
 
-Em alguns minutos, a aba **Releases** terá a `v1.0.0` com:
+Em alguns minutos, a aba **Releases** terá a `v1.0.0` com **duas variantes**:
 
-- `RedeScan-Linux-x86_64.AppImage` — instalador/portátil universal do Linux
-  (dê permissão de execução e clique duas vezes: `chmod +x *.AppImage && ./RedeScan-Linux-x86_64.AppImage`)
+### Portátil (leve) — recomendada para a maioria
+Um único arquivo, sem navegador embutido (usa "abrir no sistema" para web):
+
+- `RedeScan-Linux-x86_64.AppImage` — portátil universal do Linux
+  (`chmod +x *.AppImage && ./RedeScan-Linux-x86_64.AppImage`)
 - `RedeScan-Windows-x64.exe` — executável único para Windows (não precisa instalar)
 - `RedeScan-Android.apk` — APK de teste (debug-signed)
 
+### Full (com motor web) — maior
+Pacote em `.zip` com o **navegador integrado (CEF)** e o **vídeo RTSP (LibVLC)**
+embutidos. É um pacote de vários arquivos (o CEF exige isso), ~400 MB:
+
+- `RedeScan-Full-Linux-x64.zip`
+- `RedeScan-Full-Windows-x64.zip`
+
+Descompacte e rode o executável `RedeScan`/`RedeScan.exe` de dentro da pasta.
+
 As notas de versão são geradas automaticamente a partir dos commits/PRs.
 
-> **Nota sobre os formatos:** o executável self-contained é publicado **sem os
-> `.pdb`** (símbolos de debug), então cada download é um único arquivo. No Linux,
-> o binário é empacotado como **AppImage** — o formato universal que roda em
-> qualquer distribuição sem instalação. (Os *artifacts* por execução do CI ainda
-> chegam dentro de um `.zip` porque o próprio GitHub Actions embrulha todo
-> artifact; os assets da Release, porém, são os arquivos diretos.)
+> **Por que duas variantes?** O motor web (Chromium/CEF) pesa centenas de MB e
+> precisa de arquivos soltos — não cabe no formato "um arquivo só". Quem quer um
+> download pequeno e portátil usa a variante leve; quem precisa do navegador
+> embutido usa a Full. (Os *artifacts* por execução do CI sempre chegam em `.zip`
+> porque o GitHub Actions embrulha todo artifact; os assets da Release são os
+> arquivos diretos.)
 
 ## Corrigindo uma tag errada
 

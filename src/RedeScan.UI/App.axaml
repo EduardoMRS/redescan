@@ -8,8 +8,46 @@
         <local:ViewLocator />
     </Application.DataTemplates>
 
+    <Application.Resources>
+        <ResourceDictionary>
+            <!-- Cor de destaque da marca (teal) -->
+            <Color x:Key="RsAccentColor">#13A89E</Color>
+
+            <ResourceDictionary.ThemeDictionaries>
+                <!-- ===== Tema Escuro ===== -->
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="RsAccent" Color="#16B6AB" />
+                    <SolidColorBrush x:Key="RsAccentHover" Color="#1AC8BC" />
+                    <SolidColorBrush x:Key="RsAccentSoft" Color="#2216B6AB" />
+                    <SolidColorBrush x:Key="RsCardBg" Color="#1C2128" />
+                    <SolidColorBrush x:Key="RsContentBg" Color="#14181D" />
+                    <SolidColorBrush x:Key="RsHairline" Color="#2A313A" />
+                    <Color x:Key="RsSidebarTop">#1A1F26</Color>
+                    <Color x:Key="RsSidebarBottom">#12161B</Color>
+                </ResourceDictionary>
+
+                <!-- ===== Tema Claro ===== -->
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="RsAccent" Color="#0E8C84" />
+                    <SolidColorBrush x:Key="RsAccentHover" Color="#0B7A73" />
+                    <SolidColorBrush x:Key="RsAccentSoft" Color="#1A13A89E" />
+                    <SolidColorBrush x:Key="RsCardBg" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="RsContentBg" Color="#F4F6F8" />
+                    <SolidColorBrush x:Key="RsHairline" Color="#E2E6EA" />
+                    <Color x:Key="RsSidebarTop">#FFFFFF</Color>
+                    <Color x:Key="RsSidebarBottom">#EEF1F4</Color>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
     <Application.Styles>
-        <FluentTheme />
+        <FluentTheme>
+            <FluentTheme.Palettes>
+                <ColorPaletteResources x:Key="Dark" Accent="#16B6AB" />
+                <ColorPaletteResources x:Key="Light" Accent="#0E8C84" />
+            </FluentTheme.Palettes>
+        </FluentTheme>
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
         <StyleInclude Source="avares://RedeScan.UI/Styles/AppStyles.axaml" />
     </Application.Styles>

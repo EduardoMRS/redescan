@@ -130,12 +130,25 @@ jobs:
           path: ./RedeScan-Android.apk
 
   # ---------------------------------------------------------------------------
-  # Validação (não bloqueante) da build de mídia nativa (CEF + LibVLC).
+  # Em push/PR: valida (não bloqueante) que a build de mídia nativa compila.
+  # Em tag v*: gera o pacote "Full" (com navegador CEF + vídeo LibVLC), zipado.
+  # Não é single-file/AppImage: o CEF exige arquivos soltos.
   # ---------------------------------------------------------------------------
-  build-native-media:
-    name: Validar build com mídia nativa
-    runs-on: ubuntu-latest
-    continue-on-error: true
+  build-full-package:
+    name: Pacote Full — web + vídeo (${{ matrix.target.rid }})
+    runs-on: ${{ matrix.target.os }}
+    continue-on-error: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - os: ubuntu-latest
+            rid: linux-x64
+            artifact_name: RedeScan-Full-Linux-x64
+          - os: windows-latest
+            rid: win-x64
+            artifact_name: RedeScan-Full-Windows-x64
+
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
@@ -145,14 +158,35 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Instalar libvlc
+      - name: Instalar libvlc (Linux)
+        if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libvlc-dev vlc
 
-      - name: Compilar com EnableNativeMedia=true
+      - name: Publicar pacote Full (CEF + LibVLC)
         run: >
-          dotnet build src/RedeScan.Desktop/RedeScan.Desktop.csproj
+          dotnet publish src/RedeScan.Desktop/RedeScan.Desktop.csproj
           --configuration Release
+          --runtime ${{ matrix.target.rid }}
+          --self-contained true
           -p:EnableNativeMedia=true
+          -p:PublishSingleFile=false
+          -p:DebugType=none
+          -p:DebugSymbols=false
+          --output ./full/${{ matrix.target.rid }}
+
+      - name: Compactar pacote Full (Linux)
+        if: runner.os == 'Linux'
+        run: cd ./full/${{ matrix.target.rid }} && zip -r "../../${{ matrix.target.artifact_name }}.zip" .
+
+      - name: Compactar pacote Full (Windows)
+        if: runner.os == 'Windows'
+        run: Compress-Archive -Path ./full/${{ matrix.target.rid }}/* -DestinationPath ./${{ matrix.target.artifact_name }}.zip
+
+      - name: Armazenar pacote Full
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target.artifact_name }}
+          path: ./${{ matrix.target.artifact_name }}.zip
 
   # ---------------------------------------------------------------------------
   # DEPLOY / PUBLICAÇÃO: só roda quando uma tag v* é enviada.
@@ -160,7 +194,7 @@ jobs:
   # ---------------------------------------------------------------------------
   release:
     name: Publicar GitHub Release
-    needs: [ build-test-publish, build-android-apk ]
+    needs: [ build-test-publish, build-android-apk, build-full-package ]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
@@ -180,3 +214,4 @@ jobs:
             ./artifacts/**/*.exe
             ./artifacts/**/*.AppImage
             ./artifacts/**/*.apk
+            ./artifacts/**/*.zip

@@ -9,24 +9,29 @@
 
     <DockPanel>
         <!-- Barra de endereço -->
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
-            <TextBox Text="{Binding Address}" Width="420" Watermark="https://…"
-                     VerticalAlignment="Center" />
-            <Button Content="Ir" Command="{Binding NavigateCommand}" />
-            <Button Content="Abrir no sistema" Command="{Binding OpenInSystemBrowserCommand}" />
-        </StackPanel>
+        <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,12" Padding="10">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBox Text="{Binding Address}" Width="460" Watermark="https://…"
+                         VerticalAlignment="Center" CornerRadius="8" />
+                <Button Content="➜ Ir" Classes="accent" Command="{Binding NavigateCommand}" />
+                <Button Content="↗ Abrir no sistema" Command="{Binding OpenInSystemBrowserCommand}" />
+            </StackPanel>
+        </Border>
 
         <!-- Host do conteúdo web: preenchido no code-behind quando o WebView
              nativo está disponível; caso contrário, mostra o fallback abaixo. -->
         <Panel Name="BrowserHost">
-            <Border Classes="card" Name="Fallback">
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10" MaxWidth="480">
-                    <TextBlock Text="🌐" FontSize="40" HorizontalAlignment="Center" />
+            <Border Classes="card" Name="Fallback" Padding="24">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12" MaxWidth="520">
+                    <Border Classes="pageIcon" Width="64" Height="64" HorizontalAlignment="Center">
+                        <TextBlock Text="🌐" FontSize="30" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
                     <TextBlock Classes="h2" HorizontalAlignment="Center"
-                               Text="Navegador integrado indisponível nesta build" />
+                               Text="Navegador integrado não disponível nesta build" />
                     <TextBlock Classes="subtle" TextWrapping="Wrap" TextAlignment="Center"
-                               Text="Esta versão foi compilada sem o motor web nativo (CEF). Use o botão &quot;Abrir no sistema&quot; para abrir a URL no navegador padrão, ou gere a build com -p:EnableNativeMedia=true para habilitar o navegador embutido." />
+                               Text="Esta é a versão leve (portátil). O navegador embutido (motor web) vem na versão completa — baixe o pacote &quot;Full&quot; na página de Releases. Enquanto isso, use o botão abaixo para abrir a URL no navegador padrão do sistema." />
                     <Button Content="Abrir no navegador do sistema"
+                            Classes="accent"
                             HorizontalAlignment="Center"
                             Command="{Binding OpenInSystemBrowserCommand}" />
                 </StackPanel>

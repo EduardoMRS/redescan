@@ -21,8 +21,9 @@ Ferramenta multiplataforma de **análise, diagnóstico e teste de redes**, const
   de canais 2.4/5 GHz.
 - **Câmeras RTSP** — cadastro em grade (`UniformGrid`), credenciais protegidas; render
   inline com LibVLC (opcional) e abertura em player externo.
-- **Navegador integrado** — acesso rápido a interfaces web de roteadores/ferramentas
-  (CEF opcional; fallback para o navegador do sistema).
+- **Navegador integrado** — acesso rápido a interfaces web de roteadores/ferramentas.
+  Disponível na variante **Full** (motor web CEF embutido); na variante portátil leve,
+  usa o navegador do sistema.
 - **Atalhos** — roteadores, ONUs e links úteis, abertos no navegador interno ou do sistema.
 
 ---
@@ -144,8 +145,8 @@ O workflow `.github/workflows/desktop.yml`:
 - **Em push na `main`/PR:** compila, roda os testes e publica os binários como *artifacts*
   da execução.
 - **Ao publicar uma tag `v*` (ex.: `v1.0.0`):** cria automaticamente uma **GitHub Release**
-  com os binários anexados: `RedeScan-Linux-x86_64.AppImage` (instalador universal Linux),
-  `RedeScan-Windows-x64.exe` (executável único) e `RedeScan-Android.apk`. Veja [RELEASING.md](RELEASING.md).
+  com duas variantes: **portátil leve** (`.AppImage` Linux, `.exe` Windows, `.apk` Android)
+  e **Full** com navegador + vídeo embutidos (`RedeScan-Full-*.zip`). Veja [RELEASING.md](RELEASING.md).
 
 ---
 
