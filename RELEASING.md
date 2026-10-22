@@ -59,7 +59,7 @@ git push origin :refs/tags/v1.0.0
 
 - O **APK** é assinado com a chave de **debug** (para testes). Publicar na Play Store
   exigiria uma *keystore* própria (guardada em GitHub Secrets, fora do repo).
-- No **Android**, o navegador integrado usa "abrir no sistema"; o WebView nativo
-  embutido no APK é um item futuro (o CEF é desktop-only).
+- No **Android**, o navegador integrado agora é **embutido** usando o WebView nativo do
+  sistema (`android.webkit.WebView`) — não o CEF (que é desktop-only). O APK já traz isso.
 - A variante **Full** não é single-file/AppImage porque o CEF precisa de arquivos
   soltos (libcef, locales, processo auxiliar).

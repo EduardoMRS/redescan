@@ -157,6 +157,7 @@ RedeScan/
 - [x] **Wake-on-LAN (`WakeOnLanService`):** envia magic packet UDP para ligar dispositivos pelo MAC.
 - [ ] **Uptime remoto:** inviável sem acesso ao dispositivo (SNMP/SSH com credencial) — deixado de fora para não exibir dado incorreto.
 - [x] **Deploy manual + validação automática:** dois workflows — `ci.yml` (push/PR: deps + compilação com `-warnaserror` + testes) e `release.yml` (manual/tag: builda tudo e publica a Release).
-- [x] **Full em todas as plataformas:** Windows, Linux Ubuntu (apt) e Linux Fedora (container dnf) com CEF+LibVLC; portátil (AppImage/exe) + APK Android. *Android usa "abrir no sistema" para web (WebView nativo embutido = item futuro).*
+- [x] **Full em todas as plataformas:** Windows, Linux Ubuntu (apt) e Linux Fedora (container dnf) com CEF+LibVLC; portátil (AppImage/exe) + APK Android.
+- [x] **Android — navegador embutido:** WebView nativo do Android (`android.webkit.WebView`) embutido via `NativeControlHost`/`AndroidViewControlHandle`, com seam `INativeWebView` + `App.NativeWebViewFactory` (registrada no `MainActivity`). O desktop usa CEF; o Android usa o WebView do sistema — ambos atrás da mesma abstração.
 
 > **Honestidade sobre limites:** SO é *estimativa* (TTL/banner), não fingerprinting real (exigiria root/libpcap). Nome depende de o dispositivo responder (DNS/NetBIOS). "Full para Android" usará o WebView nativo do Android (o CEF é desktop-only).

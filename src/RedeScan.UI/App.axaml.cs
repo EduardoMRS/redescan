@@ -3,6 +3,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
+using RedeScan.UI.Services;
 using RedeScan.UI.ViewModels;
 using RedeScan.UI.Views;
 
@@ -15,6 +16,13 @@ public partial class App : Application
     /// projeto executável (RedeScan.Desktop) antes da inicialização.
     /// </summary>
     public static IServiceProvider? Services { get; set; }
+
+    /// <summary>
+    /// Fábrica de navegador nativo definida pelo head de plataforma (ex.: o
+    /// head Android registra uma que cria um <c>android.webkit.WebView</c>).
+    /// Quando nula, o módulo de navegador usa "abrir no sistema".
+    /// </summary>
+    public static NativeWebViewFactory? NativeWebViewFactory { get; set; }
 
     public override void Initialize()
     {
