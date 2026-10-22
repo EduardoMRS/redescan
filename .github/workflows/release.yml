@@ -151,7 +151,17 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - name: Instalar libvlc (apt)
-        run: sudo apt-get update && sudo apt-get install -y libvlc-dev vlc
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          # noninteractive + -o prompts para evitar travar num diálogo (tzdata,
+          # etc.); --no-install-recommends enxuga o download. libvlc-dev traz os
+          # headers; o runtime do VLC vem do pacote libvlc5 (dependência do .deb).
+          sudo apt-get install -y --no-install-recommends \
+            -o Dpkg::Options::="--force-confdef" \
+            -o Dpkg::Options::="--force-confold" \
+            libvlc-dev libvlc5
       - name: Publicar pacote Full (CEF + LibVLC)
         run: >
           dotnet publish src/RedeScan.Desktop/RedeScan.Desktop.csproj
