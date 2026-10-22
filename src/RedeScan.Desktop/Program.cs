@@ -2,6 +2,7 @@ using Avalonia;
 using Microsoft.Extensions.DependencyInjection;
 using RedeScan.Core.Extensions;
 using RedeScan.UI;
+using RedeScan.UI.Services;
 using RedeScan.UI.ViewModels;
 
 namespace RedeScan.Desktop;
@@ -30,6 +31,9 @@ internal static class Program
         // Serviços de rede/configuração do Core (Fases 1 e 2).
         services.AddRedeScanCore();
 
+        // Serviços da camada de UI.
+        services.AddSingleton<ISystemBrowserLauncher, SystemBrowserLauncher>();
+
         // ViewModels da camada de apresentação (Fase 3).
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<DashboardViewModel>();
@@ -38,6 +42,11 @@ internal static class Program
         services.AddSingleton<WifiScannerViewModel>();
         services.AddSingleton<CamerasViewModel>();
         services.AddSingleton<ShortcutsViewModel>();
+        services.AddSingleton<BrowserViewModel>();
+
+        // IAppNavigator é o próprio MainWindowViewModel (resolvido sob demanda
+        // para evitar ciclo com os ViewModels que o consomem).
+        services.AddSingleton<IAppNavigator>(sp => sp.GetRequiredService<MainWindowViewModel>());
 
         return services.BuildServiceProvider();
     }

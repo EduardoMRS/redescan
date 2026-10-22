@@ -55,3 +55,25 @@ jobs:
         with:
           name: ${{ matrix.target.artifact_name }}
           path: ./publish/${{ matrix.target.rid }}
+
+  # Valida (sem publicar) a variante com mídia nativa habilitada — navegador
+  # CEF + vídeo LibVLC — para garantir que a integração opcional continua
+  # compilando. Não bloqueia os artefatos principais.
+  build-native-media:
+    name: Validar build com mídia nativa (EnableNativeMedia)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar SDK do .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Compilar com EnableNativeMedia=true
+        run: >
+          dotnet build src/RedeScan.Desktop/RedeScan.Desktop.csproj
+          --configuration Release
+          -p:EnableNativeMedia=true

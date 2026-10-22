@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="560"
+             x:Class="RedeScan.UI.Views.BrowserView"
+             x:DataType="vm:BrowserViewModel">
+
+    <DockPanel>
+        <!-- Barra de endereço -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
+            <TextBox Text="{Binding Address}" Width="420" Watermark="https://…"
+                     VerticalAlignment="Center" />
+            <Button Content="Ir" Command="{Binding NavigateCommand}" />
+            <Button Content="Abrir no sistema" Command="{Binding OpenInSystemBrowserCommand}" />
+        </StackPanel>
+
+        <!-- Host do conteúdo web: preenchido no code-behind quando o WebView
+             nativo está disponível; caso contrário, mostra o fallback abaixo. -->
+        <Panel Name="BrowserHost">
+            <Border Classes="card" Name="Fallback">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10" MaxWidth="480">
+                    <TextBlock Text="🌐" FontSize="40" HorizontalAlignment="Center" />
+                    <TextBlock Classes="h2" HorizontalAlignment="Center"
+                               Text="Navegador integrado indisponível nesta build" />
+                    <TextBlock Classes="subtle" TextWrapping="Wrap" TextAlignment="Center"
+                               Text="Esta versão foi compilada sem o motor web nativo (CEF). Use o botão &quot;Abrir no sistema&quot; para abrir a URL no navegador padrão, ou gere a build com -p:EnableNativeMedia=true para habilitar o navegador embutido." />
+                    <Button Content="Abrir no navegador do sistema"
+                            HorizontalAlignment="Center"
+                            Command="{Binding OpenInSystemBrowserCommand}" />
+                </StackPanel>
+            </Border>
+        </Panel>
+    </DockPanel>
+</UserControl>

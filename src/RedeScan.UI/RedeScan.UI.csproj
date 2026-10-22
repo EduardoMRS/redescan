@@ -5,6 +5,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <!-- Habilita mídia nativa (navegador CEF e vídeo LibVLC). Desligado por
+         padrão para manter o publish self-contained do CI leve e estável.
+         Ative com: dotnet build -p:EnableNativeMedia=true -->
+    <EnableNativeMedia Condition="'$(EnableNativeMedia)' == ''">false</EnableNativeMedia>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(EnableNativeMedia)' == 'true'">
+    <DefineConstants>$(DefineConstants);ENABLE_NATIVE_MEDIA</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +22,12 @@
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.2.3" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+  </ItemGroup>
+
+  <!-- Dependências de mídia nativa (somente quando habilitadas) -->
+  <ItemGroup Condition="'$(EnableNativeMedia)' == 'true'">
+    <PackageReference Include="WebViewControl-Avalonia" Version="3.120.13" />
+    <PackageReference Include="LibVLCSharp.Avalonia" Version="3.9.2" />
   </ItemGroup>
 
   <ItemGroup>

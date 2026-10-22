@@ -1,8 +1,10 @@
 using System.Threading;
+using Avalonia;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using RedeScan.Core.Models;
 using RedeScan.Core.Services;
+using RedeScan.UI.Services;
 
 namespace RedeScan.UI.ViewModels;
 
@@ -15,6 +17,8 @@ public partial class NetworkScannerViewModel : ViewModelBase
     private readonly INetworkScannerService _scanner;
     private readonly IPortScannerService _portScanner;
     private readonly INetworkInterfaceService _networkInterface;
+    private readonly ISystemBrowserLauncher _systemBrowser;
+    private readonly IServiceProvider _services;
     private CancellationTokenSource? _scanCts;
     private CancellationTokenSource? _portCts;
 
@@ -46,11 +50,15 @@ public partial class NetworkScannerViewModel : ViewModelBase
     public NetworkScannerViewModel(
         INetworkScannerService scanner,
         IPortScannerService portScanner,
-        INetworkInterfaceService networkInterface)
+        INetworkInterfaceService networkInterface,
+        ISystemBrowserLauncher systemBrowser,
+        IServiceProvider services)
     {
         _scanner = scanner;
         _portScanner = portScanner;
         _networkInterface = networkInterface;
+        _systemBrowser = systemBrowser;
+        _services = services;
         // O serviço espera o prefixo terminado em ponto (ex.: "192.168.0.").
         SubnetPrefix = _networkInterface.GetSubnetPrefix() ?? "192.168.0.";
     }
@@ -161,4 +169,62 @@ public partial class NetworkScannerViewModel : ViewModelBase
 
     [RelayCommand]
     private void CancelPortScan() => _portCts?.Cancel();
+
+    // ------------------------------------------------------ Menu de contexto
+    [RelayCommand]
+    private void OpenHttpInternal(NetworkHost? host)
+    {
+        var target = host ?? SelectedHost;
+        if (target is null)
+        {
+            return;
+        }
+
+        var navigator = _services.GetService(typeof(IAppNavigator)) as IAppNavigator;
+        navigator?.OpenInInternalBrowser($"http://{target.IpAddress}");
+    }
+
+    [RelayCommand]
+    private void OpenHttpsSystem(NetworkHost? host)
+    {
+        var target = host ?? SelectedHost;
+        if (target is not null)
+        {
+            _systemBrowser.Open($"https://{target.IpAddress}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task CopyIp(NetworkHost? host)
+    {
+        var target = host ?? SelectedHost;
+        if (target is null)
+        {
+            return;
+        }
+
+        var clipboard = (Application.Current?.ApplicationLifetime
+            as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?
+            .MainWindow?.Clipboard;
+
+        if (clipboard is not null)
+        {
+            await clipboard.SetTextAsync(target.IpAddress);
+            Status = $"IP {target.IpAddress} copiado.";
+        }
+    }
+
+    [RelayCommand]
+    private async Task ScanPortsOf(NetworkHost? host)
+    {
+        if (host is not null)
+        {
+            SelectedHost = host;
+        }
+
+        if (CanScanPorts)
+        {
+            await ScanPortsAsync();
+        }
+    }
 }

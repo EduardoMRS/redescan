@@ -109,9 +109,17 @@ RedeScan/
   - [x] Gráfico de colunas de ocupação por canal (2.4/5 GHz) para visualizar sobreposição.
 - [x] **Módulo 5: Navegador / Atalhos de Rede:**
   - [x] Atalhos de roteadores e ferramentas web persistidos em JSON, abertos no navegador do sistema (multiplataforma).
-  - [ ] Navegador embutido via `Avalonia.WebView` — *adiado por dependências nativas no publish.*
+  - [x] Navegador embutido (CEF via `WebViewControl-Avalonia`) atrás da flag `EnableNativeMedia`, com barra de endereço e fallback "abrir no sistema".
+- [x] **Menu de contexto (botão direito):**
+  - [x] Scanner de rede: escanear portas, abrir HTTP no navegador interno, abrir HTTPS no sistema, copiar IP.
+  - [x] Atalhos: abrir no navegador interno ou no sistema.
+  - [x] Câmeras: abrir no player externo (VLC/SO) e editar.
+- [x] **Render RTSP na grade (opcional):**
+  - [x] Pré-visualização inline com `LibVLCSharp.Avalonia` atrás da flag `EnableNativeMedia`; placeholder + "player externo" sempre disponíveis.
 
 > **Nota:** a solução inteira compila com 0 erros, os 11 testes continuam passando e o `RedeScan.Desktop` publica como executável self-contained em `linux-x64` e `win-x64`.
+>
+> **Mídia nativa opcional:** navegador CEF e vídeo LibVLC ficam atrás da propriedade MSBuild `EnableNativeMedia` (desligada por padrão). Build normal (CI) permanece leve e sem dependências nativas; para habilitar: `dotnet build -p:EnableNativeMedia=true` (requer `libvlc`/VLC e runtime CEF instalados no SO).
 >
 > **Open source / segurança:** removida a assinatura de assembly/manifest e o `.pfx` do projeto legado; nenhum atributo proprietário de copyright/trademark permanece. Não há strings de conexão de banco de dados em nenhum projeto. O `.gitignore` agora ignora `*.pfx`/`*.snk`/`*.key`, `.env`, `secrets.json`, `config.json` e o diretório interno `.dd/`.
 

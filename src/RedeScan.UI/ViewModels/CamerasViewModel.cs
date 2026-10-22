@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -34,6 +36,16 @@ public partial class CamerasViewModel : ViewModelBase
     private int _gridColumns = 2;
 
     public bool HasSelection => SelectedCamera is not null;
+
+    /// <summary>
+    /// Pedido de reprodução do stream de uma câmera. A View (quando compilada
+    /// com mídia nativa) assina este evento e inicia o LibVLC; sem mídia nativa,
+    /// nada acontece além da mensagem de status.
+    /// </summary>
+    public event Action<RtspCameraConfig>? PlayRequested;
+
+    /// <summary>Pedido para parar a reprodução atual.</summary>
+    public event Action? StopRequested;
 
     public CamerasViewModel(IConfigurationService config)
     {
@@ -108,5 +120,95 @@ public partial class CamerasViewModel : ViewModelBase
         {
             GridColumns = 1;
         }
+    }
+
+    // ------------------------------------------------------ Menu de contexto
+    /// <summary>
+    /// Abre o stream da câmera em um player externo (VLC, se disponível). A URL
+    /// autenticada é montada por <see cref="RtspCameraConfig.GetAuthenticatedUrl"/>,
+    /// mantendo as credenciais fora de qualquer log ou código.
+    /// </summary>
+    [RelayCommand]
+    private void OpenExternal(RtspCameraConfig? camera)
+    {
+        camera ??= SelectedCamera;
+        var url = camera?.GetAuthenticatedUrl();
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            Status = "Câmera sem URL de stream configurada.";
+            return;
+        }
+
+        try
+        {
+            LaunchExternalPlayer(url);
+            Status = $"Abrindo \"{camera!.Name}\" no player externo…";
+        }
+        catch (Exception ex)
+        {
+            Status = $"Não foi possível abrir o player: {ex.Message}";
+        }
+    }
+
+    private static void LaunchExternalPlayer(string url)
+    {
+        // Tenta o VLC diretamente; se não existir, delega ao handler do SO.
+        try
+        {
+            var vlc = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "vlc.exe" : "vlc";
+            Process.Start(new ProcessStartInfo(vlc, $"\"{url}\"") { UseShellExecute = true });
+            return;
+        }
+        catch
+        {
+            // Sem VLC no PATH — cai no fallback do sistema.
+        }
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            Process.Start("xdg-open", url);
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            Process.Start("open", url);
+        }
+    }
+
+    [RelayCommand]
+    private void EditCamera(RtspCameraConfig? camera)
+    {
+        if (camera is not null)
+        {
+            SelectedCamera = camera;
+        }
+    }
+
+    [RelayCommand]
+    private void PlaySelected()
+    {
+        if (SelectedCamera is null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(SelectedCamera.StreamUrl))
+        {
+            Status = "Câmera sem URL de stream configurada.";
+            return;
+        }
+
+        PlayRequested?.Invoke(SelectedCamera);
+        Status = $"Reproduzindo \"{SelectedCamera.Name}\"…";
+    }
+
+    [RelayCommand]
+    private void StopSelected()
+    {
+        StopRequested?.Invoke();
+        Status = "Reprodução parada.";
     }
 }

@@ -32,6 +32,24 @@
                       IsReadOnly="True"
                       GridLinesVisibility="Horizontal"
                       CanUserReorderColumns="True">
+                <DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Escanear portas"
+                                  Command="{Binding ScanPortsOfCommand}"
+                                  CommandParameter="{Binding SelectedHost}" />
+                        <Separator />
+                        <MenuItem Header="Abrir HTTP (navegador interno)"
+                                  Command="{Binding OpenHttpInternalCommand}"
+                                  CommandParameter="{Binding SelectedHost}" />
+                        <MenuItem Header="Abrir HTTPS (navegador do sistema)"
+                                  Command="{Binding OpenHttpsSystemCommand}"
+                                  CommandParameter="{Binding SelectedHost}" />
+                        <Separator />
+                        <MenuItem Header="Copiar IP"
+                                  Command="{Binding CopyIpCommand}"
+                                  CommandParameter="{Binding SelectedHost}" />
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="IP" Binding="{Binding IpAddress}" Width="130" />
                     <DataGridTextColumn Header="Hostname" Binding="{Binding Hostname}" Width="*" />

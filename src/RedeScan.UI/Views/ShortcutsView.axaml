@@ -22,6 +22,16 @@
                       ItemsSource="{Binding Shortcuts}"
                       SelectedItem="{Binding SelectedShortcut}"
                       GridLinesVisibility="Horizontal">
+                <DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Abrir no navegador interno"
+                                  Command="{Binding OpenCommand}"
+                                  CommandParameter="{Binding SelectedShortcut}" />
+                        <MenuItem Header="Abrir no navegador do sistema"
+                                  Command="{Binding OpenInSystemCommand}"
+                                  CommandParameter="{Binding SelectedShortcut}" />
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Nome" Binding="{Binding Name}" Width="*" />
                     <DataGridTextColumn Header="Alvo" Binding="{Binding Target}" Width="2*" />

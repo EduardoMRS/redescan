@@ -1,22 +1,21 @@
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using RedeScan.Core.Models;
 using RedeScan.Core.Services;
+using RedeScan.UI.Services;
 
 namespace RedeScan.UI.ViewModels;
 
 /// <summary>
-/// Módulo 5 — atalhos de rede (roteadores, ONUs e ferramentas web). Abre os
-/// alvos no navegador padrão do sistema de forma multiplataforma. A integração
-/// do navegador embutido (Avalonia.WebView) pode ser adicionada depois sem
-/// alterar este modelo de dados.
+/// Módulo de atalhos de rede (roteadores, ONUs e ferramentas web). Abre os
+/// alvos tanto no navegador integrado quanto no navegador padrão do sistema.
 /// </summary>
 public partial class ShortcutsViewModel : ViewModelBase
 {
     private readonly IConfigurationService _config;
+    private readonly ISystemBrowserLauncher _systemBrowser;
+    private readonly IServiceProvider _services;
     private AppSettings? _settings;
 
     public override string Title => "Atalhos";
@@ -33,9 +32,14 @@ public partial class ShortcutsViewModel : ViewModelBase
 
     public bool HasSelection => SelectedShortcut is not null;
 
-    public ShortcutsViewModel(IConfigurationService config)
+    public ShortcutsViewModel(
+        IConfigurationService config,
+        ISystemBrowserLauncher systemBrowser,
+        IServiceProvider services)
     {
         _config = config;
+        _systemBrowser = systemBrowser;
+        _services = services;
     }
 
     [RelayCommand]
@@ -82,6 +86,7 @@ public partial class ShortcutsViewModel : ViewModelBase
         Status = "Atalhos salvos.";
     }
 
+    /// <summary>Abre o atalho no navegador integrado da aplicação.</summary>
     [RelayCommand]
     private void Open(NetworkShortcut? shortcut)
     {
@@ -91,32 +96,29 @@ public partial class ShortcutsViewModel : ViewModelBase
             return;
         }
 
+        var navigator = _services.GetService(typeof(IAppNavigator)) as IAppNavigator;
+        navigator?.OpenInInternalBrowser(shortcut.Target);
+        Status = $"Abrindo {shortcut.Target} no navegador integrado…";
+    }
+
+    /// <summary>Abre o atalho no navegador padrão do sistema.</summary>
+    [RelayCommand]
+    private void OpenInSystem(NetworkShortcut? shortcut)
+    {
+        shortcut ??= SelectedShortcut;
+        if (shortcut is null || string.IsNullOrWhiteSpace(shortcut.Target))
+        {
+            return;
+        }
+
         try
         {
-            OpenInSystemBrowser(shortcut.Target);
-            Status = $"Abrindo {shortcut.Target}…";
+            _systemBrowser.Open(shortcut.Target);
+            Status = $"Abrindo {shortcut.Target} no navegador do sistema…";
         }
         catch (Exception ex)
         {
             Status = $"Não foi possível abrir: {ex.Message}";
-        }
-    }
-
-    private static void OpenInSystemBrowser(string target)
-    {
-        var url = target.Contains("://") ? target : $"http://{target}";
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            Process.Start("xdg-open", url);
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            Process.Start("open", url);
         }
     }
 }

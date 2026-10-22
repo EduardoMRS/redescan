@@ -33,6 +33,16 @@
                                         Background="#20000000"
                                         BorderBrush="{DynamicResource SystemAccentColor}"
                                         BorderThickness="1" CornerRadius="8">
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Abrir no player externo"
+                                                      Command="{Binding $parent[ItemsControl].((vm:CamerasViewModel)DataContext).OpenExternalCommand}"
+                                                      CommandParameter="{Binding}" />
+                                            <MenuItem Header="Editar"
+                                                      Command="{Binding $parent[ItemsControl].((vm:CamerasViewModel)DataContext).EditCameraCommand}"
+                                                      CommandParameter="{Binding}" />
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
                                     <Grid RowDefinitions="*,Auto">
                                         <!-- Área do stream: integração LibVLCSharp entra aqui -->
                                         <TextBlock Grid.Row="0" Text="▶ stream"
@@ -49,9 +59,26 @@
                 </ScrollViewer>
             </Border>
 
-            <!-- Editor da câmera selecionada -->
+            <!-- Editor + preview da câmera selecionada -->
             <StackPanel Grid.Column="2" Spacing="6" IsVisible="{Binding HasSelection}">
-                <TextBlock Classes="h2" Text="Editar câmera" />
+                <TextBlock Classes="h2" Text="Pré-visualização" />
+                <Border Height="160" Background="#30000000" CornerRadius="6">
+                    <Panel Name="PreviewHost">
+                        <TextBlock Name="PreviewPlaceholder"
+                                   Text="▶ Reproduzir para ver o stream"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Opacity="0.4" TextWrapping="Wrap" TextAlignment="Center" />
+                    </Panel>
+                </Border>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="▶ Reproduzir" Command="{Binding PlaySelectedCommand}" />
+                    <Button Content="⏹ Parar" Command="{Binding StopSelectedCommand}" />
+                    <Button Content="↗ Player externo"
+                            Command="{Binding OpenExternalCommand}"
+                            CommandParameter="{Binding SelectedCamera}" />
+                </StackPanel>
+
+                <TextBlock Classes="h2" Text="Editar câmera" Margin="0,8,0,0" />
                 <TextBlock Text="Nome" Classes="subtle" />
                 <TextBox Text="{Binding SelectedCamera.Name}" />
                 <TextBlock Text="Grupo" Classes="subtle" />
