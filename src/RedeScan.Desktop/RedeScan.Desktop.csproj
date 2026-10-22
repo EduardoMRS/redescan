@@ -9,6 +9,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>RedeScan</AssemblyName>
     <RootNamespace>RedeScan.Desktop</RootNamespace>
+    <!-- Ícone do executável (aparece no .exe/.msi e na barra de tarefas) -->
+    <ApplicationIcon>..\RedeScan.UI\Assets\redescan.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

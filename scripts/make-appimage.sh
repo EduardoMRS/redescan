@@ -45,8 +45,8 @@ Categories=Network;Utility;
 Terminal=false
 EOF
 
-# Ícone: usa o do projeto Android se existir; senão gera um placeholder 1x1.
-ICON_SRC="src/RedeScan.Android/Resources/drawable/icon.png"
+# Ícone oficial do RedeScan; se não existir, gera um placeholder 1x1.
+ICON_SRC="src/Assets/icons/redescan-256.png"
 if [ -f "${ICON_SRC}" ]; then
   cp "${ICON_SRC}" "${APPDIR}/redescan.png"
 else

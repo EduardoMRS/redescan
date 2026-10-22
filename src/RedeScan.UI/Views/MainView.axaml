@@ -15,8 +15,9 @@
                 <!-- Marca -->
                 <Border DockPanel.Dock="Top" Padding="20,20,20,16">
                     <StackPanel Orientation="Horizontal" Spacing="12">
-                        <Border Classes="logo">
-                            <TextBlock Text="📡" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <Border Classes="logo" ClipToBounds="True">
+                            <Image Source="avares://RedeScan.UI/Assets/logo.png"
+                                   Width="40" Height="40" Stretch="UniformToFill" />
                         </Border>
                         <StackPanel VerticalAlignment="Center" Spacing="1">
                             <TextBlock Text="RedeScan" Classes="h1" FontSize="20" />

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Definição WiX v4 do instalador .msi do RedeScan Full (Windows).
+  O conteúdo publicado é incluído em massa pelo elemento <Files> (toda a pasta
+  informada em -d PublishDir). Instala em "Program Files\RedeScan" e cria
+  atalho no Menu Iniciar.
+
+  Build (no runner Windows):
+    dotnet tool install --global wix
+    wix build scripts/packaging/redescan.wxs -d PublishDir=full\win-x64 \
+        -d Version=1.0.0 -o RedeScan-Full-Windows-x64.msi
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="RedeScan"
+           Manufacturer="RedeScan"
+           Version="$(Version)"
+           UpgradeCode="7B2E9C4A-3D1F-4A6B-9E2C-6F0A1B2C3D4E"
+           Scope="perMachine">
+
+    <MajorUpgrade DowngradeErrorMessage="Uma versão mais recente do RedeScan já está instalada." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Ícone do atalho (usa o do app instalado). -->
+    <Icon Id="RedeScanIcon" SourceFile="$(PublishDir)\RedeScan.exe" />
+    <Property Id="ARPPRODUCTICON" Value="RedeScanIcon" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="RedeScan" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AppShortcutFolder" Name="RedeScan" />
+    </StandardDirectory>
+
+    <!-- Inclui toda a pasta publicada. -->
+    <Feature Id="Main" Title="RedeScan" Level="1">
+      <ComponentGroupRef Id="PublishedFiles" />
+      <ComponentRef Id="AppShortcut" />
+    </Feature>
+
+    <ComponentGroup Id="PublishedFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(PublishDir)\**" />
+    </ComponentGroup>
+
+    <!-- Atalho no Menu Iniciar. -->
+    <Component Id="AppShortcut" Directory="AppShortcutFolder" Guid="*">
+      <Shortcut Id="StartMenuShortcut"
+                Name="RedeScan"
+                Target="[INSTALLFOLDER]RedeScan.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="RedeScanIcon" />
+      <RemoveFolder Id="RemoveAppShortcutFolder" Directory="AppShortcutFolder" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\RedeScan" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+  </Package>
+</Wix>
