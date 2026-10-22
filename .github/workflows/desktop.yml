@@ -1,0 +1,56 @@
+name: Build and Deploy (Windows & Linux)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-test-publish:
+    name: Build & Publish (${{ matrix.target.rid }})
+    runs-on: ${{ matrix.target.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - os: ubuntu-latest
+            rid: linux-x64
+            artifact_name: RedeScan-Linux-x64
+          - os: windows-latest
+            rid: win-x64
+            artifact_name: RedeScan-Windows-x64
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar SDK do .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restaurar dependências
+        run: dotnet restore RedeScan.sln
+
+      - name: Compilar solução
+        run: dotnet build RedeScan.sln --configuration Release --no-restore
+
+      - name: Executar testes automatizados
+        run: dotnet test RedeScan.sln --configuration Release --no-build --verbosity normal
+
+      - name: Publicar aplicação em lote
+        run: >
+          dotnet publish src/RedeScan.Core/RedeScan.Core.csproj
+          --configuration Release
+          --runtime ${{ matrix.target.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          --output ./publish/${{ matrix.target.rid }}
+
+      - name: Armazenar artefatos gerados
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target.artifact_name }}
+          path: ./publish/${{ matrix.target.rid }}
