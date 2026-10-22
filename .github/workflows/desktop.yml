@@ -48,6 +48,9 @@ jobs:
       - name: Executar testes automatizados
         run: dotnet test RedeScan.sln --configuration Release --no-build --verbosity normal
 
+      # Publica um único executável self-contained, SEM os .pdb (símbolos de
+      # debug) — por isso DebugType=none/DebugSymbols=false. Resultado: apenas
+      # o binário RedeScan (Linux) ou RedeScan.exe (Windows).
       - name: Publicar aplicação desktop
         run: >
           dotnet publish src/RedeScan.Desktop/RedeScan.Desktop.csproj
@@ -56,24 +59,33 @@ jobs:
           --self-contained true
           -p:PublishSingleFile=true
           -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:DebugType=none
+          -p:DebugSymbols=false
           --output ./publish/${{ matrix.target.rid }}
 
-      # Empacota o binário em um único arquivo (zip) para anexar à Release.
-      - name: Compactar artefato (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          cd ./publish/${{ matrix.target.rid }}
-          zip -r "../../${{ matrix.target.artifact_name }}.zip" .
-
-      - name: Compactar artefato (Windows)
+      # --- Windows: o próprio RedeScan.exe já é o "instalador portátil". ---
+      - name: Preparar binário (Windows)
         if: runner.os == 'Windows'
-        run: Compress-Archive -Path ./publish/${{ matrix.target.rid }}/* -DestinationPath ./${{ matrix.target.artifact_name }}.zip
+        run: Copy-Item ./publish/${{ matrix.target.rid }}/RedeScan.exe ./RedeScan-Windows-x64.exe
 
-      - name: Armazenar artefato da execução
+      - name: Armazenar binário Windows
+        if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target.artifact_name }}
-          path: ./${{ matrix.target.artifact_name }}.zip
+          path: ./RedeScan-Windows-x64.exe
+
+      # --- Linux: empacota o binário como AppImage (instalador universal). ---
+      - name: Gerar AppImage (Linux)
+        if: runner.os == 'Linux'
+        run: bash scripts/make-appimage.sh ./publish/${{ matrix.target.rid }}/RedeScan RedeScan-Linux-x86_64.AppImage
+
+      - name: Armazenar AppImage Linux
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target.artifact_name }}
+          path: ./RedeScan-Linux-x86_64.AppImage
 
   # ---------------------------------------------------------------------------
   # Android: gera o APK de teste (debug-signed).
@@ -165,5 +177,6 @@ jobs:
         with:
           generate_release_notes: true
           files: |
-            ./artifacts/**/*.zip
+            ./artifacts/**/*.exe
+            ./artifacts/**/*.AppImage
             ./artifacts/**/*.apk

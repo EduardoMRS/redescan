@@ -142,9 +142,10 @@ nesse arquivo local** e injetadas na URL só em tempo de execução
 O workflow `.github/workflows/desktop.yml`:
 
 - **Em push na `main`/PR:** compila, roda os testes e publica os binários como *artifacts*
-  da execução (Desktop win/linux, pacotes de mídia nativa e APK Android).
+  da execução.
 - **Ao publicar uma tag `v*` (ex.: `v1.0.0`):** cria automaticamente uma **GitHub Release**
-  com os binários anexados para download. Veja [RELEASING.md](RELEASING.md).
+  com os binários anexados: `RedeScan-Linux-x86_64.AppImage` (instalador universal Linux),
+  `RedeScan-Windows-x64.exe` (executável único) e `RedeScan-Android.apk`. Veja [RELEASING.md](RELEASING.md).
 
 ---
 

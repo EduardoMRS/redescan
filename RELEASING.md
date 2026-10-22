@@ -32,11 +32,19 @@ git push origin v1.0.0
 
 Em alguns minutos, a aba **Releases** terá a `v1.0.0` com:
 
-- `RedeScan-Linux-x64.zip` — executável self-contained para Linux
-- `RedeScan-Windows-x64.zip` — executável self-contained para Windows
+- `RedeScan-Linux-x86_64.AppImage` — instalador/portátil universal do Linux
+  (dê permissão de execução e clique duas vezes: `chmod +x *.AppImage && ./RedeScan-Linux-x86_64.AppImage`)
+- `RedeScan-Windows-x64.exe` — executável único para Windows (não precisa instalar)
 - `RedeScan-Android.apk` — APK de teste (debug-signed)
 
 As notas de versão são geradas automaticamente a partir dos commits/PRs.
+
+> **Nota sobre os formatos:** o executável self-contained é publicado **sem os
+> `.pdb`** (símbolos de debug), então cada download é um único arquivo. No Linux,
+> o binário é empacotado como **AppImage** — o formato universal que roda em
+> qualquer distribuição sem instalação. (Os *artifacts* por execução do CI ainda
+> chegam dentro de um `.zip` porque o próprio GitHub Actions embrulha todo
+> artifact; os assets da Release, porém, são os arquivos diretos.)
 
 ## Corrigindo uma tag errada
 
