@@ -50,6 +50,21 @@
                                   Command="{Binding WakeOnLanCommand}"
                                   CommandParameter="{Binding SelectedHost}" />
                         <Separator />
+                        <MenuItem Header="🖥 Acesso remoto">
+                            <MenuItem Header="SSH"
+                                      Command="{Binding OpenSshCommand}"
+                                      CommandParameter="{Binding SelectedHost}" />
+                            <MenuItem Header="Telnet"
+                                      Command="{Binding OpenTelnetCommand}"
+                                      CommandParameter="{Binding SelectedHost}" />
+                            <MenuItem Header="Winbox (por IP)"
+                                      Command="{Binding OpenWinboxByIpCommand}"
+                                      CommandParameter="{Binding SelectedHost}" />
+                            <MenuItem Header="Winbox (por MAC)"
+                                      Command="{Binding OpenWinboxByMacCommand}"
+                                      CommandParameter="{Binding SelectedHost}" />
+                        </MenuItem>
+                        <Separator />
                         <MenuItem Header="Abrir HTTP (navegador interno)"
                                   Command="{Binding OpenHttpInternalCommand}"
                                   CommandParameter="{Binding SelectedHost}" />

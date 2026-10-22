@@ -20,6 +20,7 @@ public partial class NetworkScannerViewModel : ViewModelBase
     private readonly IPingService _pingService;
     private readonly IHostInspector _inspector;
     private readonly IWakeOnLanService _wol;
+    private readonly IRemoteAccessService _remote;
     private readonly ISystemBrowserLauncher _systemBrowser;
     private readonly IServiceProvider _services;
     private CancellationTokenSource? _scanCts;
@@ -53,6 +54,9 @@ public partial class NetworkScannerViewModel : ViewModelBase
     [ObservableProperty] private bool _isInspecting;
     [ObservableProperty] private HostDetails? _hostDetails;
 
+    /// <summary>True se o Winbox foi localizado no sistema.</summary>
+    [ObservableProperty] private bool _isWinboxAvailable;
+
     public bool CanScanPorts => SelectedHost is not null && !IsScanningPorts;
 
     public NetworkScannerViewModel(
@@ -62,6 +66,7 @@ public partial class NetworkScannerViewModel : ViewModelBase
         IPingService pingService,
         IHostInspector inspector,
         IWakeOnLanService wol,
+        IRemoteAccessService remote,
         ISystemBrowserLauncher systemBrowser,
         IServiceProvider services)
     {
@@ -71,8 +76,10 @@ public partial class NetworkScannerViewModel : ViewModelBase
         _pingService = pingService;
         _inspector = inspector;
         _wol = wol;
+        _remote = remote;
         _systemBrowser = systemBrowser;
         _services = services;
+        IsWinboxAvailable = _remote.IsWinboxAvailable;
         // O serviço espera o prefixo terminado em ponto (ex.: "192.168.0.").
         SubnetPrefix = _networkInterface.GetSubnetPrefix() ?? "192.168.0.";
     }
@@ -339,5 +346,72 @@ public partial class NetworkScannerViewModel : ViewModelBase
     {
         var prefix = _networkInterface.GetSubnetPrefix();
         return string.IsNullOrWhiteSpace(prefix) ? null : $"{prefix.TrimEnd('.')}.255";
+    }
+
+    // ------------------------------------------------------- Acesso remoto
+    [RelayCommand]
+    private void OpenSsh(NetworkHost? host)
+    {
+        var target = host ?? SelectedHost;
+        if (target is null)
+        {
+            return;
+        }
+
+        // Usa a porta SSH detectada na inspeção, se diferente da padrão.
+        var port = PortForService("SSH") ?? 22;
+        var r = _remote.OpenSsh(target.IpAddress, port);
+        Status = r.Launched ? $"SSH aberto: {r.Command}" : $"Falha no SSH: {r.Error}";
+    }
+
+    [RelayCommand]
+    private void OpenTelnet(NetworkHost? host)
+    {
+        var target = host ?? SelectedHost;
+        if (target is null)
+        {
+            return;
+        }
+
+        var port = PortForService("Telnet") ?? 23;
+        var r = _remote.OpenTelnet(target.IpAddress, port);
+        Status = r.Launched ? $"Telnet aberto: {r.Command}" : $"Falha no Telnet: {r.Error}";
+    }
+
+    [RelayCommand]
+    private void OpenWinboxByIp(NetworkHost? host)
+    {
+        var target = host ?? SelectedHost;
+        if (target is null)
+        {
+            return;
+        }
+
+        var r = _remote.OpenWinbox(target.IpAddress);
+        Status = r.Launched ? $"Winbox (IP) aberto para {target.IpAddress}." : $"Winbox: {r.Error}";
+    }
+
+    [RelayCommand]
+    private void OpenWinboxByMac(NetworkHost? host)
+    {
+        var target = host ?? SelectedHost;
+        // Prefere o MAC da inspeção; cai no MAC do host, se houver.
+        var mac = HostDetails?.MacAddress ?? target?.MacAddress;
+        if (string.IsNullOrWhiteSpace(mac))
+        {
+            Status = "MAC desconhecido — rode a Inspeção primeiro para conectar o Winbox por MAC.";
+            return;
+        }
+
+        var r = _remote.OpenWinbox(mac);
+        Status = r.Launched ? $"Winbox (MAC) aberto para {mac}." : $"Winbox: {r.Error}";
+    }
+
+    /// <summary>Procura, nos serviços inspecionados, a porta de um serviço pelo nome.</summary>
+    private int? PortForService(string serviceName)
+    {
+        var svc = HostDetails?.Services
+            .FirstOrDefault(s => s.ServiceName.Contains(serviceName, StringComparison.OrdinalIgnoreCase));
+        return svc?.Port;
     }
 }

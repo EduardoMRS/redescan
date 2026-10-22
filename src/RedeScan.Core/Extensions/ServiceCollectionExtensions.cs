@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IHostInspector, HostInspector>();
         services.AddSingleton<IWakeOnLanService, WakeOnLanService>();
         services.AddSingleton<IRtspListImporter, RtspListImporter>();
+        services.AddSingleton<IRemoteAccessService, RemoteAccessService>();
         services.AddSingleton<IPortScannerService, PortScannerService>();
         services.AddSingleton<ILoadTestService, LoadTestService>();
         services.AddSingleton<IConfigurationService>(_ => new ConfigurationService(customConfigPath));
