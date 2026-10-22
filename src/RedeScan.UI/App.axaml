@@ -8,6 +8,25 @@
         <local:ViewLocator />
     </Application.DataTemplates>
 
+    <!-- Ícone de bandeja (desktop). O monitor em segundo plano avisa aqui. -->
+    <TrayIcon.Icons>
+        <TrayIcons>
+            <TrayIcon Icon="avares://RedeScan.UI/Assets/logo.png"
+                      ToolTipText="RedeScan"
+                      Clicked="OnTrayClicked">
+                <TrayIcon.Menu>
+                    <NativeMenu>
+                        <NativeMenuItem Header="Abrir RedeScan" Click="OnTrayOpen" />
+                        <NativeMenuItem Header="Monitorar rede em segundo plano"
+                                        ToggleType="CheckBox" Click="OnTrayToggleMonitor" />
+                        <NativeMenuItemSeparator />
+                        <NativeMenuItem Header="Sair" Click="OnTrayExit" />
+                    </NativeMenu>
+                </TrayIcon.Menu>
+            </TrayIcon>
+        </TrayIcons>
+    </TrayIcon.Icons>
+
     <Application.Resources>
         <ResourceDictionary>
             <!-- Cor de destaque da marca (teal) -->

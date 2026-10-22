@@ -20,6 +20,7 @@ public static class Composition
 
         // Serviços da camada de UI.
         services.AddSingleton<ISystemBrowserLauncher, SystemBrowserLauncher>();
+        services.AddSingleton<IBackgroundMonitor, BackgroundMonitor>();
 
         // ViewModels da camada de apresentação (Fase 3).
         services.AddSingleton<MainWindowViewModel>();
