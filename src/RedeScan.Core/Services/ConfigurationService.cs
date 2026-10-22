@@ -33,6 +33,47 @@ public class ConfigurationService : IConfigurationService
 
     public string GetConfigFilePath() => _configFilePath;
 
+    public AppSettings LoadSettings()
+    {
+        try
+        {
+            if (!File.Exists(_configFilePath))
+            {
+                var defaults = AppSettings.CreateDefault();
+                TrySaveSync(defaults);
+                return defaults;
+            }
+
+            var json = File.ReadAllText(_configFilePath);
+            var settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
+            return settings ?? AppSettings.CreateDefault();
+        }
+        catch
+        {
+            return AppSettings.CreateDefault();
+        }
+    }
+
+    /// <summary>Grava de forma síncrona, ignorando falhas (best-effort no startup).</summary>
+    private void TrySaveSync(AppSettings settings)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(_configFilePath);
+            if (!string.IsNullOrWhiteSpace(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            var json = JsonSerializer.Serialize(settings, JsonOptions);
+            File.WriteAllText(_configFilePath, json);
+        }
+        catch
+        {
+            // Sem permissão de escrita, etc. — não deve impedir o app de abrir.
+        }
+    }
+
     public async Task<AppSettings> LoadSettingsAsync(CancellationToken ct = default)
     {
         try

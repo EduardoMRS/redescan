@@ -41,7 +41,35 @@ public partial class App : Application
         // Se nenhum head configurou o container (ex.: Android), monta o padrão.
         Services ??= Composition.BuildServiceProvider();
 
-        var mainViewModel = Services.GetRequiredService<MainWindowViewModel>();
+        MainWindowViewModel mainViewModel;
+        try
+        {
+            mainViewModel = Services.GetRequiredService<MainWindowViewModel>();
+        }
+        catch (Exception ex)
+        {
+            // Nunca deixe o processo vivo sem janela: registra e segue para
+            // abrir ao menos uma janela de erro mínima, em vez de "sumir".
+            System.Diagnostics.Trace.TraceError("Falha ao inicializar a UI: " + ex);
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime fallback)
+            {
+                fallback.MainWindow = new Window
+                {
+                    Title = "RedeScan — erro na inicialização",
+                    Width = 640,
+                    Height = 320,
+                    Content = new TextBlock
+                    {
+                        Margin = new Thickness(20),
+                        TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                        Text = "O RedeScan não conseguiu iniciar:\n\n" + ex.Message
+                    }
+                };
+                fallback.MainWindow.Show();
+            }
+            base.OnFrameworkInitializationCompleted();
+            return;
+        }
 
         switch (ApplicationLifetime)
         {

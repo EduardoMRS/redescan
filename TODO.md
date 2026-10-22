@@ -193,3 +193,9 @@ RedeScan/
 - [x] **Range de portas configurável:** o scanner usa `PortScanStart/End` das preferências como range padrão (ou "todas as portas"); a aba Portas mostra os campos De/até.
 - [x] **Navegador — seletor de roteadores:** a barra de endereço ganhou um combo com os roteadores/dispositivos web descobertos (via `IWebDeviceRegistry`, alimentado pelo painel); escolher um navega direto para ele. Útil para alternar entre roteadores.
 - [x] **Chave estável por módulo (`ViewModelBase.Key`)** para persistir preferências sem depender do título.
+
+---
+### 🐛 Correções na v1.0.2 (pós-publicação)
+- [x] **App demorava demais / parecia não abrir (.deb e AppImage):** o `MainWindowViewModel` carregava as preferências no construtor com `LoadSettingsAsync().GetAwaiter().GetResult()` na UI thread durante o startup, prendendo a inicialização até o continuation async destravar. Adicionado `IConfigurationService.LoadSettings()` 100% síncrono (sem I/O async); o shell e o scanner passam a usá-lo. `OnFrameworkInitializationCompleted` agora tem try/catch que nunca deixa o processo vivo sem janela.
+- [x] **Stream RTSP não exibia nada (sem erro):** a `Media` era descartada (`using var`) logo após `Play()`, antes do stream abrir — tela preta silenciosa. Agora a `Media` vive até o `StopNative`. Adicionadas opções `:rtsp-tcp` (força TCP; Wowza/NAT) e `:network-caching=1000`, e handler `EncounteredError` para dar feedback real de falha.
+- [x] Testes de regressão para `LoadSettings()` síncrono (13 testes no total).

@@ -77,7 +77,9 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator, IShellP
         _currentPage = dashboard;
 
         // Carrega as preferências salvas e aplica (tela inicial, tema, módulos).
-        var saved = _config.LoadSettingsAsync().GetAwaiter().GetResult();
+        // Síncrono de propósito: rodamos na UI thread durante o startup e
+        // bloquear uma chamada async aqui pode travar o app sem abrir a janela.
+        var saved = _config.LoadSettings();
         ApplyPreferences(saved);
         ApplyBrowserHome(saved);
         var startup = _allPages.FirstOrDefault(p => p.Key == saved.StartupPageKey);
@@ -155,9 +157,10 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator, IShellP
 
     public void SetStartupModule(string moduleKey)
     {
-        var settings = _config.LoadSettingsAsync().GetAwaiter().GetResult();
+        var settings = _config.LoadSettings();
         settings.StartupPageKey = moduleKey;
-        _config.SaveSettingsAsync(settings).GetAwaiter().GetResult();
+        // Grava em background para não bloquear o clique no menu.
+        _ = _config.SaveSettingsAsync(settings);
     }
 
     /// <summary>Define a página inicial do navegador embutido conforme as prefs.</summary>

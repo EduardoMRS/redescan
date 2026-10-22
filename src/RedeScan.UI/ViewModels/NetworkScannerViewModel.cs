@@ -101,10 +101,10 @@ public partial class NetworkScannerViewModel : ViewModelBase
         // O serviço espera o prefixo terminado em ponto (ex.: "192.168.0.").
         SubnetPrefix = _networkInterface.GetSubnetPrefix() ?? "192.168.0.";
 
-        // Range de portas padrão vem das preferências do usuário.
+        // Range de portas padrão vem das preferências do usuário (síncrono).
         try
         {
-            var s = _config.LoadSettingsAsync().GetAwaiter().GetResult();
+            var s = _config.LoadSettings();
             PortRangeStart = s.PortScanStart;
             PortRangeEnd = s.PortScanEnd;
         }

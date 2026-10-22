@@ -158,6 +158,7 @@ public partial class CamerasView : UserControl
         public LibVLCSharp.Shared.MediaPlayer Player { get; init; } = null!;
         public LibVLCSharp.Avalonia.VideoView View { get; init; } = null!;
         public Panel Host { get; init; } = null!;
+        public LibVLCSharp.Shared.Media? Media { get; set; }
     }
 
     private readonly Dictionary<CameraSlot, SlotPlayer> _players = new();
@@ -191,15 +192,40 @@ public partial class CamerasView : UserControl
             host.Children[i].IsVisible = false;
         }
 
+        // Feedback de erro real do motor (ex.: host inacessível, codec ausente).
+        player.EncounteredError += (_, _) =>
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                if (_vm is not null)
+                {
+                    _vm.Status = $"Falha ao reproduzir \"{camera.Name}\": o motor de vídeo " +
+                                 "não conseguiu abrir o stream (verifique a URL/credenciais/rede).";
+                }
+            });
+        };
+
+        var media = new LibVLCSharp.Shared.Media(libVlc, new Uri(url));
+
+        // Opções importantes para RTSP:
+        // - rtsp-tcp: força o transporte por TCP. Muitos servidores (inclusive
+        //   Wowza) não entregam o fluxo via UDP quando há NAT/firewall, o que dá
+        //   "tela preta sem erro". TCP é mais confiável.
+        // - network-caching: buffer de rede em ms, evita travar logo no início.
+        media.AddOption(":rtsp-tcp");
+        media.AddOption(":network-caching=1000");
+
         _players[slot] = new SlotPlayer
         {
             LibVlc = libVlc,
             Player = player,
             View = view,
-            Host = host
+            Host = host,
+            Media = media
         };
 
-        using var media = new LibVLCSharp.Shared.Media(libVlc, new Uri(url));
+        // NÃO descartar a Media aqui: o Play é assíncrono e descartá-la cedo
+        // impede o stream de iniciar. Ela é liberada no StopNative.
         player.Play(media);
     }
 
@@ -236,6 +262,7 @@ public partial class CamerasView : UserControl
         }
 
         sp.View.MediaPlayer = null;
+        sp.Media?.Dispose();
         sp.Player.Dispose();
         sp.LibVlc.Dispose();
         _players.Remove(slot);
