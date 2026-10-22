@@ -15,9 +15,9 @@
     <DefineConstants>PublishDir=$(PublishDir);Version=$(ProductVersion)</DefineConstants>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="redescan.wxs" />
-  </ItemGroup>
+  <!-- NÃO declarar <Compile Include="redescan.wxs"> aqui: o WiX SDK já inclui
+       automaticamente todos os *.wxs da pasta. Declarar de novo duplicaria os
+       símbolos (WIX0089/WIX0091). -->
 
   <!-- Harvest de toda a pasta publicada; os componentes vão para HarvestedFiles,
        com a raiz da árvore de diretórios ancorada em INSTALLFOLDER. -->
