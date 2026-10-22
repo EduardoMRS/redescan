@@ -87,6 +87,16 @@ public partial class BrowserView : UserControl
     // Build desktop "Full": WebView real baseado em CEF (WebViewControl-Avalonia).
     private void AttachCefWebView()
     {
+        // O runtime CEF embutido é confiável no Windows, mas no Linux o modelo
+        // de subprocess do Chromium trava sem erro capturável quando faltam
+        // bibliotecas de sistema ou sob sandbox/Wayland. Nessas plataformas
+        // mantemos o fallback "abrir no navegador do sistema", que é estável.
+        if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(
+                System.Runtime.InteropServices.OSPlatform.Windows))
+        {
+            return; // mantém o fallback (abrir no sistema)
+        }
+
         var host = this.FindControl<Panel>("BrowserHost");
         var fallback = this.FindControl<Border>("Fallback");
         if (host is null)

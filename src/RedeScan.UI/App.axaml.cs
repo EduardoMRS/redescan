@@ -49,9 +49,13 @@ public partial class App : Application
                 _mainWindow = new MainWindow { DataContext = mainViewModel };
                 desktop.MainWindow = _mainWindow;
 
-                // Fechar a janela recolhe para a bandeja em vez de encerrar.
-                desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-                _mainWindow.Closing += OnMainWindowClosing;
+                // Fechar a janela encerra o app (comportamento universal e
+                // previsível). O recolhimento para a bandeja acontece ao
+                // MINIMIZAR a janela — assim, em ambientes Linux sem uma system
+                // tray funcional (ex.: GNOME puro), o usuário nunca fica preso
+                // com um processo invisível que não dá para encerrar.
+                desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
+                _mainWindow.PropertyChanged += OnMainWindowPropertyChanged;
 
                 // Monitor de segundo plano: avisa na bandeja sobre mudanças.
                 _monitor = Services.GetService<IBackgroundMonitor>();
@@ -71,13 +75,15 @@ public partial class App : Application
     }
 
     // -------------------------------------------------- Bandeja (desktop)
-    private void OnMainWindowClosing(object? sender, WindowClosingEventArgs e)
+    private void OnMainWindowPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        // Em vez de fechar, esconde na bandeja (a menos que seja shutdown real).
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime)
+        // Ao minimizar, recolhe para a bandeja escondendo a janela da barra de
+        // tarefas. Clicar no ícone da bandeja (OnTrayClicked) a restaura.
+        if (e.Property == Window.WindowStateProperty &&
+            e.NewValue is WindowState.Minimized &&
+            _mainWindow is not null)
         {
-            e.Cancel = true;
-            _mainWindow?.Hide();
+            _mainWindow.Hide();
         }
     }
 
@@ -123,11 +129,6 @@ public partial class App : Application
         _monitor?.Stop();
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            // Remove o handler para o fechamento não ser cancelado.
-            if (_mainWindow is not null)
-            {
-                _mainWindow.Closing -= OnMainWindowClosing;
-            }
             desktop.Shutdown();
         }
     }

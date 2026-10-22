@@ -165,3 +165,10 @@ RedeScan/
 - [x] **Atualização automática:** versão central em `Directory.Build.props`; `UpdateService` checa `latest.json` remoto (`https://deveduardomrs.pro/d/redescan/release/latest.json`), compara versões e escolhe o download da plataforma; banner de aviso no Painel. O `release.yml` gera o `latest.json` automaticamente (versão da tag + links dos assets) e o anexa à Release / artefato `latest-json`.
 
 > **Honestidade sobre limites:** SO é *estimativa* (TTL/banner), não fingerprinting real (exigiria root/libpcap). Nome depende de o dispositivo responder (DNS/NetBIOS). "Full para Android" usará o WebView nativo do Android (o CEF é desktop-only).
+
+---
+### 🩹 v1.0.1 — correções de runtime (Linux .deb)
+- [x] **Ping sem privilégio:** `PingService` não envia mais buffer de payload custom no Linux/macOS (evita o socket ICMP RAW / `cap_net_raw`). Usa o overload sem buffer; Windows mantém o buffer. Corrige também o traceroute.
+- [x] **Scanner de rede vazio:** resolvido junto com o ping (o sweep usa o `PingService`).
+- [x] **App não fechava / "travou":** fechar a janela encerra o app (`ShutdownMode.OnMainWindowClose`); o recolhimento para a bandeja passou a ser no **minimizar** — some o risco de processo invisível em Linux sem tray.
+- [x] **Navegador travava sem erro:** CEF embutido só no Windows; no Linux usa o fallback "abrir no sistema".

@@ -27,9 +27,9 @@
                         <TextBlock Text="🌐" FontSize="30" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <TextBlock Classes="h2" HorizontalAlignment="Center"
-                               Text="Navegador integrado não disponível nesta build" />
+                               Text="Abrir no navegador do sistema" />
                     <TextBlock Classes="subtle" TextWrapping="Wrap" TextAlignment="Center"
-                               Text="Esta é a versão leve (portátil). O navegador embutido (motor web) vem na versão completa — baixe o pacote &quot;Full&quot; na página de Releases. Enquanto isso, use o botão abaixo para abrir a URL no navegador padrão do sistema." />
+                               Text="Digite uma URL na barra de endereço acima e use o botão abaixo para abri-la no navegador padrão do seu sistema. O navegador embutido está disponível na versão completa para Windows." />
                     <Button Content="Abrir no navegador do sistema"
                             Classes="accent"
                             HorizontalAlignment="Center"
