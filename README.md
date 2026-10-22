@@ -44,7 +44,7 @@ Tem duas opções:
   fontes desconhecidas").
 
 ### Completa (com navegador e vídeo embutidos) — instalador de verdade
-- **Windows:** `RedeScan-Full-Windows-x64.msi` — duplo clique, segue o assistente.
+- **Windows:** `RedeScan-Full-Windows-x64.exe` — instalador; duplo clique e siga o assistente.
 - **Ubuntu/Debian:** `RedeScan-Full-Linux-x64.deb`
   ```bash
   sudo apt install ./RedeScan-Full-Linux-x64.deb

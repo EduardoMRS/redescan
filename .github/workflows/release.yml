@@ -104,13 +104,13 @@ jobs:
 
   # ===========================================================================
   # FULL (motor web CEF + vídeo LibVLC): instaladores nativos por plataforma —
-  # .msi no Windows, .deb no Ubuntu/Debian, .rpm no Fedora/RHEL.
+  # setup.exe (Inno Setup) no Windows, .deb no Ubuntu/Debian, .rpm no Fedora/RHEL.
   # ===========================================================================
   full-windows:
-    name: Full — Windows (.msi)
+    name: Full — Windows (setup.exe)
     needs: version
     runs-on: windows-latest
-    # Não bloqueia a release: se o MSI falhar, o portátil .exe cobre o Windows.
+    # Não bloqueia a release: se o instalador falhar, o portátil .exe cobre o Windows.
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -124,21 +124,22 @@ jobs:
           -p:EnableNativeMedia=true -p:PublishSingleFile=false
           -p:DebugType=none -p:DebugSymbols=false
           --output ./full/win-x64
-      # Gera o .msi via projeto WiX v4 (SDK), usando HarvestDirectory para
-      # incluir toda a pasta publicada (substituto do heat; o elemento <Files>
-      # só existe no WiX 5+). Não usa WiX v7 (que exige aceite de EULA no CI).
-      - name: Gerar instalador .msi
+      # Instalador via Inno Setup (iscc já vem pré-instalado no runner Windows).
+      # Inclui a pasta inteira com uma linha (recursesubdirs) — sem o atrito de
+      # harvesting do WiX. Gera RedeScan-Full-Windows-x64.exe.
+      - name: Gerar instalador (Inno Setup)
         shell: pwsh
         run: |
-          dotnet build scripts/packaging/redescan.wixproj -c Release `
-            -p:PublishDir=full\win-x64 -p:ProductVersion=${{ needs.version.outputs.number }}
-          $msi = Get-ChildItem -Recurse -Filter *.msi -Path scripts/packaging/bin |
-                 Select-Object -First 1
-          Copy-Item $msi.FullName RedeScan-Full-Windows-x64.msi
+          # Caminho absoluto evita ambiguidade (Inno resolve Source relativo ao .iss).
+          $pub = (Resolve-Path "full\win-x64").Path
+          iscc /DPublishDir="$pub" `
+               /DAppVersion="${{ needs.version.outputs.number }}" `
+               scripts\packaging\redescan.iss
+          Copy-Item scripts\packaging\RedeScan-Full-Windows-x64.exe .
       - uses: actions/upload-artifact@v4
         with:
           name: RedeScan-Full-Windows
-          path: ./RedeScan-Full-Windows-x64.msi
+          path: ./RedeScan-Full-Windows-x64.exe
 
   full-ubuntu:
     name: Full — Linux (.deb)
@@ -274,7 +275,7 @@ jobs:
             "notes": "Release ${TAG}",
             "downloads": {
               "windows": "${BASE}/RedeScan-Windows-x64.exe",
-              "windowsFull": "${BASE}/RedeScan-Full-Windows-x64.msi",
+              "windowsFull": "${BASE}/RedeScan-Full-Windows-x64.exe",
               "linux": "${BASE}/RedeScan-Linux-x86_64.AppImage",
               "linuxFullUbuntu": "${BASE}/RedeScan-Full-Linux-x64.deb",
               "linuxFullFedora": "${BASE}/RedeScan-Full-Linux-x86_64.rpm",
@@ -294,7 +295,6 @@ jobs:
             ./artifacts/**/*.exe
             ./artifacts/**/*.AppImage
             ./artifacts/**/*.apk
-            ./artifacts/**/*.msi
             ./artifacts/**/*.deb
             ./artifacts/**/*.rpm
             ./latest.json
