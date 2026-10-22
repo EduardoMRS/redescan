@@ -147,3 +147,15 @@ RedeScan/
 - [x] **Deploy real:** workflow publica GitHub Release ao enviar uma tag `v*` (binários desktop zipados + APK anexados).
 
 > **Correção de CI (Disk quota exceeded no Android):** o runner (Ubuntu 26.04) já traz o .NET 10; `dotnet workload install android` pegava o manifesto do .NET 10 e baixava packs net8+net9+net10 até estourar o disco. Resolvido com `global.json` fixando o SDK na banda 8.0.4xx (`rollForward: latestFeature`) + `--skip-manifest-update`, e restringindo os RIDs do Android a `android-arm64;android-x64`.
+
+---
+
+### 📌 Fase 5: Rede avançada e scan aprofundado — 🔄 Em andamento
+- [x] **Painel — atalhos de dispositivos web:** `WebDeviceScanner` acha hosts com interface web em qualquer porta; auto-descoberta periódica (Wi-Fi/cabo) e busca de roteadores no 1º acesso.
+- [x] **Configuração de rede:** IP estático/DHCP, DNS e PPPoE via `nmcli`/`netsh`, com pré-visualização do comando antes de aplicar (operações sensíveis, exigem privilégio).
+- [x] **Scan aprofundado (`HostInspector`):** banner grabbing para identificar o serviço real (não só a porta), estimativa de SO por TTL+banners, nome (DNS), MAC e fabricante (OUI).
+- [x] **Wake-on-LAN (`WakeOnLanService`):** envia magic packet UDP para ligar dispositivos pelo MAC.
+- [ ] **Uptime remoto:** inviável sem acesso ao dispositivo (SNMP/SSH com credencial) — deixado de fora para não exibir dado incorreto.
+- [ ] **Deploy manual + validação automática** e **Full em todas as plataformas** (Linux Ubuntu/Fedora, Windows, Android) — próximo passo desta fase.
+
+> **Honestidade sobre limites:** SO é *estimativa* (TTL/banner), não fingerprinting real (exigiria root/libpcap). Nome depende de o dispositivo responder (DNS/NetBIOS). "Full para Android" usará o WebView nativo do Android (o CEF é desktop-only).

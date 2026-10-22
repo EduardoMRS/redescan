@@ -18,10 +18,13 @@ public partial class NetworkScannerViewModel : ViewModelBase
     private readonly IPortScannerService _portScanner;
     private readonly INetworkInterfaceService _networkInterface;
     private readonly IPingService _pingService;
+    private readonly IHostInspector _inspector;
+    private readonly IWakeOnLanService _wol;
     private readonly ISystemBrowserLauncher _systemBrowser;
     private readonly IServiceProvider _services;
     private CancellationTokenSource? _scanCts;
     private CancellationTokenSource? _portCts;
+    private CancellationTokenSource? _inspectCts;
 
     public override string Title => "Scanner de Rede";
     public override string Icon => "📡";
@@ -46,6 +49,10 @@ public partial class NetworkScannerViewModel : ViewModelBase
     [ObservableProperty]
     private string _status = "Pronto.";
 
+    // Inspeção aprofundada do host selecionado.
+    [ObservableProperty] private bool _isInspecting;
+    [ObservableProperty] private HostDetails? _hostDetails;
+
     public bool CanScanPorts => SelectedHost is not null && !IsScanningPorts;
 
     public NetworkScannerViewModel(
@@ -53,6 +60,8 @@ public partial class NetworkScannerViewModel : ViewModelBase
         IPortScannerService portScanner,
         INetworkInterfaceService networkInterface,
         IPingService pingService,
+        IHostInspector inspector,
+        IWakeOnLanService wol,
         ISystemBrowserLauncher systemBrowser,
         IServiceProvider services)
     {
@@ -60,6 +69,8 @@ public partial class NetworkScannerViewModel : ViewModelBase
         _portScanner = portScanner;
         _networkInterface = networkInterface;
         _pingService = pingService;
+        _inspector = inspector;
+        _wol = wol;
         _systemBrowser = systemBrowser;
         _services = services;
         // O serviço espera o prefixo terminado em ponto (ex.: "192.168.0.").
@@ -265,5 +276,68 @@ public partial class NetworkScannerViewModel : ViewModelBase
         {
             Status = $"Erro ao pingar {target.IpAddress}: {ex.Message}";
         }
+    }
+
+    // ------------------------------------------------- Inspeção aprofundada
+    [RelayCommand]
+    private async Task Inspect(NetworkHost? host)
+    {
+        var target = host ?? SelectedHost;
+        if (target is null)
+        {
+            return;
+        }
+
+        SelectedHost = target;
+        _inspectCts?.Cancel();
+        _inspectCts = new CancellationTokenSource();
+        IsInspecting = true;
+        HostDetails = null;
+        Status = $"Inspecionando {target.IpAddress} (serviços, SO, MAC)…";
+
+        try
+        {
+            HostDetails = await _inspector.InspectAsync(target.IpAddress, ct: _inspectCts.Token);
+            var svc = HostDetails.Services.Count;
+            Status = $"{target.IpAddress}: {svc} serviço(s), SO {HostDetails.OsGuess ?? "?"}, " +
+                     $"MAC {HostDetails.MacAddress ?? "n/d"}.";
+        }
+        catch (OperationCanceledException)
+        {
+            Status = "Inspeção cancelada.";
+        }
+        catch (Exception ex)
+        {
+            Status = $"Erro na inspeção: {ex.Message}";
+        }
+        finally
+        {
+            IsInspecting = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task WakeOnLan(NetworkHost? host)
+    {
+        // Usa o MAC do detalhe inspecionado ou o do host, se já conhecido.
+        var mac = HostDetails?.MacAddress ?? (host ?? SelectedHost)?.MacAddress;
+        if (string.IsNullOrWhiteSpace(mac))
+        {
+            Status = "MAC desconhecido — rode a Inspeção primeiro para obter o MAC.";
+            return;
+        }
+
+        var broadcast = BuildBroadcast();
+        var ok = await _wol.WakeAsync(mac, broadcast);
+        Status = ok
+            ? $"Magic packet (Wake-on-LAN) enviado para {mac}."
+            : "Falha ao enviar o Wake-on-LAN.";
+    }
+
+    /// <summary>Deriva o broadcast da sub-rede atual (ex.: 192.168.0.255).</summary>
+    private string? BuildBroadcast()
+    {
+        var prefix = _networkInterface.GetSubnetPrefix();
+        return string.IsNullOrWhiteSpace(prefix) ? null : $"{prefix.TrimEnd('.')}.255";
     }
 }

@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
+             xmlns:models="clr-namespace:RedeScan.Core.Models;assembly=RedeScan.Core"
              mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="560"
              x:Class="RedeScan.UI.Views.NetworkScannerView"
              x:DataType="vm:NetworkScannerViewModel">
@@ -36,11 +37,17 @@
                       DoubleTapped="OnHostDoubleTapped">
                 <DataGrid.ContextMenu>
                     <ContextMenu>
+                        <MenuItem Header="🔬 Inspecionar (serviços, SO, MAC)"
+                                  Command="{Binding InspectCommand}"
+                                  CommandParameter="{Binding SelectedHost}" />
                         <MenuItem Header="⚡ Escanear portas"
                                   Command="{Binding ScanPortsOfCommand}"
                                   CommandParameter="{Binding SelectedHost}" />
                         <MenuItem Header="📍 Ping"
                                   Command="{Binding PingHostCommand}"
+                                  CommandParameter="{Binding SelectedHost}" />
+                        <MenuItem Header="⏻ Wake-on-LAN"
+                                  Command="{Binding WakeOnLanCommand}"
                                   CommandParameter="{Binding SelectedHost}" />
                         <Separator />
                         <MenuItem Header="Abrir HTTP (navegador interno)"
@@ -66,28 +73,91 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-            <!-- Painel de portas -->
-            <DockPanel Grid.Column="2">
-                <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
-                    <TextBlock Classes="h2" Text="Portas abertas" />
-                    <TextBlock Classes="subtle" Text="{Binding SelectedHost.IpAddress, FallbackValue='Selecione um host'}" />
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Content="Escanear portas"
-                                Command="{Binding ScanPortsCommand}"
-                                IsVisible="{Binding !IsScanningPorts}" />
-                        <Button Content="Cancelar"
-                                Command="{Binding CancelPortScanCommand}"
-                                IsVisible="{Binding IsScanningPorts}" />
-                    </StackPanel>
-                </StackPanel>
+            <!-- Painel lateral: Portas + Detalhes -->
+            <TabControl Grid.Column="2">
+                <!-- Portas -->
+                <TabItem Header="Portas">
+                    <DockPanel Margin="0,8,0,0">
+                        <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+                            <TextBlock Classes="subtle" Text="{Binding SelectedHost.IpAddress, FallbackValue='Selecione um host'}" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Escanear portas"
+                                        Command="{Binding ScanPortsCommand}"
+                                        IsVisible="{Binding !IsScanningPorts}" />
+                                <Button Content="Cancelar"
+                                        Command="{Binding CancelPortScanCommand}"
+                                        IsVisible="{Binding IsScanningPorts}" />
+                            </StackPanel>
+                        </StackPanel>
+                        <DataGrid ItemsSource="{Binding OpenPorts}" IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Porta" Binding="{Binding Port}" Width="70" />
+                                <DataGridTextColumn Header="Serviço" Binding="{Binding ServiceName}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </TabItem>
 
-                <DataGrid ItemsSource="{Binding OpenPorts}" IsReadOnly="True">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Porta" Binding="{Binding Port}" Width="70" />
-                        <DataGridTextColumn Header="Serviço" Binding="{Binding ServiceName}" Width="*" />
-                    </DataGrid.Columns>
-                </DataGrid>
-            </DockPanel>
+                <!-- Detalhes (inspeção aprofundada) -->
+                <TabItem Header="Detalhes">
+                    <ScrollViewer>
+                        <StackPanel Margin="0,8,0,0" Spacing="6">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="🔬 Inspecionar"
+                                        Classes="accent"
+                                        Command="{Binding InspectCommand}"
+                                        CommandParameter="{Binding SelectedHost}"
+                                        IsVisible="{Binding !IsInspecting}" />
+                                <ProgressBar IsIndeterminate="True" Width="90" VerticalAlignment="Center"
+                                             IsVisible="{Binding IsInspecting}" />
+                                <Button Content="⏻ Wake-on-LAN"
+                                        Command="{Binding WakeOnLanCommand}"
+                                        CommandParameter="{Binding SelectedHost}" />
+                            </StackPanel>
+
+                            <Border Classes="card" IsVisible="{Binding HostDetails, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                <StackPanel Spacing="4">
+                                    <Grid ColumnDefinitions="90,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Nome" Classes="subtle" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding HostDetails.Hostname, FallbackValue='—'}" />
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="MAC" Classes="subtle" />
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding HostDetails.MacAddress, FallbackValue='—'}" />
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Fabricante" Classes="subtle" />
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding HostDetails.Vendor, FallbackValue='—'}" />
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="SO (estim.)" Classes="subtle" />
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding HostDetails.OsGuess, FallbackValue='—'}" TextWrapping="Wrap" />
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="TTL / RTT" Classes="subtle" />
+                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding HostDetails.Ttl}" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <TextBlock Text="Serviços" Classes="h2"
+                                       IsVisible="{Binding HostDetails, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                            <ItemsControl ItemsSource="{Binding HostDetails.Services}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="models:ServiceInfo">
+                                        <Border Classes="card" Padding="10,8" Margin="0,0,0,6">
+                                            <StackPanel Spacing="2">
+                                                <TextBlock>
+                                                    <Run Text="{Binding Port}" FontWeight="SemiBold" />
+                                                    <Run Text="  " />
+                                                    <Run Text="{Binding ServiceName}" />
+                                                </TextBlock>
+                                                <TextBlock Classes="subtle" Text="{Binding Product}" TextWrapping="Wrap"
+                                                           IsVisible="{Binding Product, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                                <TextBlock Classes="subtle" FontFamily="monospace" FontSize="11"
+                                                           Text="{Binding Banner}" TextWrapping="Wrap"
+                                                           IsVisible="{Binding Banner, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
         </Grid>
     </DockPanel>
 </UserControl>

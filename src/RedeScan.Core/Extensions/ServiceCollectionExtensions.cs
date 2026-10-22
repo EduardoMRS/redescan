@@ -15,6 +15,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<INetworkScannerService, NetworkScannerService>();
         services.AddSingleton<IWebDeviceScanner, WebDeviceScanner>();
         services.AddSingleton<INetworkConfigurationService, NetworkConfigurationService>();
+        services.AddSingleton<IHostInspector, HostInspector>();
+        services.AddSingleton<IWakeOnLanService, WakeOnLanService>();
         services.AddSingleton<IPortScannerService, PortScannerService>();
         services.AddSingleton<ILoadTestService, LoadTestService>();
         services.AddSingleton<IConfigurationService>(_ => new ConfigurationService(customConfigPath));
