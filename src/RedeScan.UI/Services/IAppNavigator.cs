@@ -9,4 +9,7 @@ public interface IAppNavigator
 {
     /// <summary>Abre a URL no módulo de navegador integrado e foca nele.</summary>
     void OpenInInternalBrowser(string url);
+
+    /// <summary>Abre o terminal SSH embutido já apontando para o host.</summary>
+    void OpenTerminal(string host, int port = 22, string? username = null);
 }

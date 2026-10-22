@@ -51,7 +51,10 @@
                                   CommandParameter="{Binding SelectedHost}" />
                         <Separator />
                         <MenuItem Header="🖥 Acesso remoto">
-                            <MenuItem Header="SSH"
+                            <MenuItem Header="SSH (terminal embutido)"
+                                      Command="{Binding OpenSshEmbeddedCommand}"
+                                      CommandParameter="{Binding SelectedHost}" />
+                            <MenuItem Header="SSH (terminal do sistema)"
                                       Command="{Binding OpenSshCommand}"
                                       CommandParameter="{Binding SelectedHost}" />
                             <MenuItem Header="Telnet"

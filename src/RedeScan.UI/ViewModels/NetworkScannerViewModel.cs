@@ -364,6 +364,22 @@ public partial class NetworkScannerViewModel : ViewModelBase
         Status = r.Launched ? $"SSH aberto: {r.Command}" : $"Falha no SSH: {r.Error}";
     }
 
+    /// <summary>Abre o terminal SSH embutido (funciona inclusive no Android).</summary>
+    [RelayCommand]
+    private void OpenSshEmbedded(NetworkHost? host)
+    {
+        var target = host ?? SelectedHost;
+        if (target is null)
+        {
+            return;
+        }
+
+        var port = PortForService("SSH") ?? 22;
+        var navigator = _services.GetService(typeof(IAppNavigator)) as IAppNavigator;
+        navigator?.OpenTerminal(target.IpAddress, port);
+        Status = $"Terminal SSH embutido aberto para {target.IpAddress}:{port}.";
+    }
+
     [RelayCommand]
     private void OpenTelnet(NetworkHost? host)
     {

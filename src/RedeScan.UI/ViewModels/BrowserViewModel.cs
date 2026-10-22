@@ -10,7 +10,7 @@ namespace RedeScan.UI.ViewModels;
 /// aplicação é compilada com suporte a mídia nativa (CEF), usa um WebView
 /// embutido; caso contrário, oferece abrir no navegador do sistema.
 /// </summary>
-public partial class BrowserViewModel : ViewModelBase, IAppNavigator
+public partial class BrowserViewModel : ViewModelBase
 {
     private readonly ISystemBrowserLauncher _systemBrowser;
 

@@ -13,6 +13,7 @@ namespace RedeScan.UI.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase, IAppNavigator
 {
     private readonly BrowserViewModel _browser;
+    private readonly TerminalViewModel _terminal;
 
     public override string Title => "RedeScan";
 
@@ -32,9 +33,11 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator
         CamerasViewModel cameras,
         ShortcutsViewModel shortcuts,
         BrowserViewModel browser,
-        NetworkConfigViewModel networkConfig)
+        NetworkConfigViewModel networkConfig,
+        TerminalViewModel terminal)
     {
         _browser = browser;
+        _terminal = terminal;
 
         Pages = new ObservableCollection<ViewModelBase>
         {
@@ -45,7 +48,8 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator
             cameras,
             shortcuts,
             browser,
-            networkConfig
+            networkConfig,
+            terminal
         };
 
         _currentPage = dashboard;
@@ -68,5 +72,12 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator
     {
         _browser.OpenInInternalBrowser(url);
         CurrentPage = _browser;
+    }
+
+    /// <summary>Abre o terminal SSH embutido já apontando para o host.</summary>
+    public void OpenTerminal(string host, int port = 22, string? username = null)
+    {
+        _terminal.Prepare(host, port, username);
+        CurrentPage = _terminal;
     }
 }

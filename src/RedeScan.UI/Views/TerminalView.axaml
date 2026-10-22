@@ -1,0 +1,47 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="560"
+             x:Class="RedeScan.UI.Views.TerminalView"
+             x:DataType="vm:TerminalViewModel">
+
+    <DockPanel>
+        <!-- Barra de conexão -->
+        <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,10" Padding="10">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBox Text="{Binding Host}" Width="150" Watermark="host/IP" VerticalAlignment="Center" />
+                <TextBox Text="{Binding Port}" Width="70" Watermark="porta" VerticalAlignment="Center" />
+                <TextBox Text="{Binding Username}" Width="120" Watermark="usuário" VerticalAlignment="Center" />
+                <TextBox Text="{Binding Password}" Width="130" Watermark="senha" PasswordChar="•" VerticalAlignment="Center" />
+                <Button Content="🔌 Conectar" Classes="accent"
+                        Command="{Binding ConnectCommand}" IsVisible="{Binding IsDisconnected}" />
+                <Button Content="⏏ Desconectar"
+                        Command="{Binding DisconnectCommand}" IsVisible="{Binding IsConnected}" />
+                <Button Content="🧹 Limpar" Command="{Binding ClearOutputCommand}" />
+            </StackPanel>
+        </Border>
+
+        <!-- Status -->
+        <TextBlock DockPanel.Dock="Bottom" Classes="subtle" Text="{Binding Status}" Margin="0,8,0,0" TextWrapping="Wrap" />
+
+        <!-- Entrada de comando -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+            <TextBox Text="{Binding CommandInput}" Watermark="comando + Enter"
+                     IsEnabled="{Binding IsConnected}"
+                     HorizontalAlignment="Stretch" Width="650"
+                     KeyDown="OnCommandKeyDown" />
+            <Button Content="Enviar" Command="{Binding SendCommand}" IsEnabled="{Binding IsConnected}" />
+        </StackPanel>
+
+        <!-- Saída do terminal -->
+        <Border Classes="card" Padding="0">
+            <ScrollViewer Name="OutputScroll">
+                <SelectableTextBlock Text="{Binding Output}"
+                                     FontFamily="monospace" FontSize="12"
+                                     Padding="10" TextWrapping="NoWrap" />
+            </ScrollViewer>
+        </Border>
+    </DockPanel>
+</UserControl>
