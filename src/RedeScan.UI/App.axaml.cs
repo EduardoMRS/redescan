@@ -27,16 +27,21 @@ public partial class App : Application
         // com as validações do CommunityToolkit.Mvvm.
         DisableAvaloniaDataAnnotationValidation();
 
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            var mainViewModel = Services?.GetRequiredService<MainWindowViewModel>()
-                                ?? throw new InvalidOperationException(
-                                    "O provedor de serviços não foi configurado antes da inicialização da UI.");
+        // Se nenhum head configurou o container (ex.: Android), monta o padrão.
+        Services ??= Composition.BuildServiceProvider();
 
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = mainViewModel
-            };
+        var mainViewModel = Services.GetRequiredService<MainWindowViewModel>();
+
+        switch (ApplicationLifetime)
+        {
+            case IClassicDesktopStyleApplicationLifetime desktop:
+                desktop.MainWindow = new MainWindow { DataContext = mainViewModel };
+                break;
+
+            // Android/iOS e demais plataformas de view única.
+            case ISingleViewApplicationLifetime singleView:
+                singleView.MainView = new MainView { DataContext = mainViewModel };
+                break;
         }
 
         base.OnFrameworkInitializationCompleted();

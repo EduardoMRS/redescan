@@ -128,6 +128,18 @@ RedeScan/
 
 ---
 
+### 📌 Fase 3.5: Build Android (APK de teste) — ✅ Concluída
+- [x] Refatorar o shell em `MainView` (UserControl) reutilizável; `MainWindow` apenas o hospeda (suporte a single-view).
+- [x] Raiz de composição compartilhada (`Composition.BuildServiceProvider`) usada por Desktop e Android.
+- [x] `App` trata tanto `IClassicDesktopStyleApplicationLifetime` quanto `ISingleViewApplicationLifetime`.
+- [x] Projeto `src/RedeScan.Android` (`net8.0-android`, Avalonia.Android 11.2.3, `MainActivity`, manifest com permissões de rede/Wi-Fi, ícone e tema).
+- [x] APK de teste gerado e validado (`com.redescan.app-Signed.apk`, minSdk 21, ~63 MB).
+- [x] Script `scripts/build-android.sh` e job de CI `build-android-apk` (fora da `RedeScan.sln` para não exigir o workload android no build principal).
+
+> **Nota Android:** projeto deliberadamente fora da `RedeScan.sln` — `net8.0-android` exige o workload `android`, que o build/CI padrão não tem. Build via `scripts/build-android.sh` (requer JDK 17+, workload android e Android SDK API 34).
+
+---
+
 ### 📌 Fase 4: Limpeza, Testes e Polimento
 - [ ] Validação multiplataforma (execução e testes em Linux e Windows).
 - [ ] Garantir que nenhum arquivo temporário, senha ou token seja persistido no repositório.

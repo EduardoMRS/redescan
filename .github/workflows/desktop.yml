@@ -103,3 +103,39 @@ jobs:
         with:
           name: ${{ matrix.target.artifact_name }}
           path: ./dist/native/${{ matrix.target.rid }}
+
+  # Gera um APK de teste do Android (debug-signed). Projeto fora da RedeScan.sln
+  # para não exigir o workload android no build principal.
+  build-android-apk:
+    name: Gerar APK de teste (Android)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configurar SDK do .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Instalar workload android
+        run: dotnet workload install android
+
+      - name: Publicar APK (Release)
+        run: >
+          dotnet publish src/RedeScan.Android/RedeScan.Android.csproj
+          --configuration Release
+          --output ./dist/android
+
+      - name: Armazenar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RedeScan-Android-APK
+          path: ./dist/android/*-Signed.apk

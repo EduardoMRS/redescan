@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          android:versionCode="1"
+          android:versionName="1.0">
+	<uses-sdk android:minSdkVersion="21" android:targetSdkVersion="34" />
+
+	<!-- RedeScan é uma ferramenta de rede: precisa de acesso à rede e ao estado Wi-Fi. -->
+	<uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+	<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+	<application android:label="RedeScan" android:icon="@drawable/icon" android:allowBackup="true" />
+</manifest>
