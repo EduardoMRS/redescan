@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using RedeScan.Core.Services;
+using RedeScan.Core.Services.Wifi;
 
 namespace RedeScan.Core.Extensions;
 
@@ -13,6 +14,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPortScannerService, PortScannerService>();
         services.AddSingleton<ILoadTestService, LoadTestService>();
         services.AddSingleton<IConfigurationService>(_ => new ConfigurationService(customConfigPath));
+        services.AddSingleton<IWifiScanner, PlatformWifiScanner>();
 
         return services;
     }

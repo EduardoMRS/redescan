@@ -71,18 +71,18 @@ RedeScan/
 ---
 
 ### 📌 Fase 2: Camada Específica de Plataforma (Wi-Fi Scanner)
-- [ ] Definir a interface `IWifiScanner`:
-  ```csharp
-  public interface IWifiScanner
-  {
-      Task<IReadOnlyList<WifiNetworkInfo>> GetAvailableNetworksAsync(CancellationToken ct = default);
-  }
-  ```
-- [ ] **Implementação Linux (`LinuxWifiScanner`):**
-  - [ ] Consulta via `nmcli -t -f SSID,BSSID,CHAN,FREQ,SIGNAL,SECURITY dev wifi` ou leitura de `/proc/net/wireless`.
-- [ ] **Implementação Windows (`WindowsWifiScanner`):**
-  - [ ] Consulta via API `wlanapi.dll` (Native Wifi API).
-- [ ] Registro via Injeção de Dependência condicional à plataforma em tempo de execução.
+- [x] Definir modelo `WifiNetworkInfo` (SSID, BSSID, RSSI dBm, Percentual, Canais, Frequência, Bandas 2.4/5/6 GHz e Segurança).
+- [x] Definir a interface `IWifiScanner` (`IsSupportedAsync`, `GetAvailableNetworksAsync`).
+- [x] **Implementação Linux (`LinuxWifiScanner` & `LinuxNmcliWifiParser`):**
+  - [x] Parser robusto com suporte a caracteres escapados (`\:` no BSSID) e detecção de status conectado.
+  - [x] Consulta via `nmcli dev wifi list` com suporte a rescan.
+- [x] **Implementação Windows (`WindowsWifiScanner` & `WindowsNetshWifiParser`):**
+  - [x] Parser multilíngue (PT/EN) para saída do comando nativo `netsh wlan show networks mode=bssid`.
+- [x] **Provedor Dinâmico (`PlatformWifiScanner`):**
+  - [x] Detecção em runtime do sistema operacional e fallback seguro (`NullWifiScanner`) para máquinas sem adaptador Wi-Fi.
+- [x] Registro via Injeção de Dependência no container (`ServiceCollectionExtensions`).
+- [x] **Suíte de Testes da Fase 2:**
+  - [x] 4 novos testes unitários adicionados (totalizando 11 testes aprovados com 100% de sucesso).
 
 ---
 

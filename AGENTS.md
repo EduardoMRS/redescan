@@ -31,5 +31,6 @@ Para entender o estado atual do projeto em profundidade, consulte os arquivos no
 
 - **Fase 0 (Setup)**: ✅ Concluída (SDK .NET 8 e solução estruturada).
 - **Fase 1 (Core & Serviços de Rede)**: ✅ Concluída com 7 testes unitários aprovados.
-- **Fase 2 (Wi-Fi Scanner)**: ⏳ Próxima etapa.
-- **Fase 3 (Avalonia UI & MVVM)**: ⏳ A iniciar após/junto à Fase 2.
+- **Fase 2 (Wi-Fi Scanner)**: ✅ Concluída com 4 testes unitários aprovados (total de 11 testes).
+- **Fase 3 (Avalonia UI & MVVM)**: ⏳ Próxima etapa.
+
