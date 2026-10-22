@@ -45,7 +45,14 @@ public partial class CamerasView : UserControl
         }
     }
 
-    private void OnUnloaded(object? sender, RoutedEventArgs e) => OnStopRequested();
+    private void OnUnloaded(object? sender, RoutedEventArgs e)
+    {
+#if ENABLE_NATIVE_MEDIA
+        DisposeNative();
+#else
+        OnStopRequested();
+#endif
+    }
 
     private void OnPlayRequested(RtspCameraConfig camera)
     {
@@ -117,6 +124,24 @@ public partial class CamerasView : UserControl
         {
             _mediaPlayer.Stop();
         }
+    }
+
+    // Libera os recursos nativos do LibVLC ao sair da tela, evitando vazamento
+    // de handles do MediaPlayer/engine entre navegações.
+    private void DisposeNative()
+    {
+        StopNative();
+
+        if (_videoView is not null)
+        {
+            _videoView.MediaPlayer = null;
+        }
+
+        _mediaPlayer?.Dispose();
+        _mediaPlayer = null;
+
+        _libVlc?.Dispose();
+        _libVlc = null;
     }
 #endif
 }

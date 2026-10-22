@@ -115,7 +115,8 @@ RedeScan/
   - [x] Atalhos: abrir no navegador interno ou no sistema.
   - [x] Câmeras: abrir no player externo (VLC/SO) e editar.
 - [x] **Render RTSP na grade (opcional):**
-  - [x] Pré-visualização inline com `LibVLCSharp.Avalonia` atrás da flag `EnableNativeMedia`; placeholder + "player externo" sempre disponíveis.
+  - [x] Pré-visualização inline com `LibVLCSharp.Avalonia` (`VideoView` + `MediaPlayer`, play/stop) atrás da flag `EnableNativeMedia`; placeholder + "player externo" sempre disponíveis.
+  - [x] Liberação de recursos nativos (`Dispose` do `MediaPlayer`/engine) ao sair da tela.
 
 > **Nota:** a solução inteira compila com 0 erros, os 11 testes continuam passando e o `RedeScan.Desktop` publica como executável self-contained em `linux-x64` e `win-x64`.
 >
