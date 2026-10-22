@@ -138,18 +138,6 @@ nesse arquivo local** e injetadas na URL só em tempo de execução
 
 ---
 
-## 🔁 Integração contínua e releases
-
-O workflow `.github/workflows/desktop.yml`:
-
-- **Em push na `main`/PR:** compila, roda os testes e publica os binários como *artifacts*
-  da execução.
-- **Ao publicar uma tag `v*` (ex.: `v1.0.0`):** cria automaticamente uma **GitHub Release**
-  com duas variantes: **portátil leve** (`.AppImage` Linux, `.exe` Windows, `.apk` Android)
-  e **Full** com navegador + vídeo embutidos (`RedeScan-Full-*.zip`). Veja [RELEASING.md](RELEASING.md).
-
----
-
 ## 🧪 Testes
 
 ```bash
