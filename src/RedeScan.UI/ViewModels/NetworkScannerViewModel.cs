@@ -121,9 +121,12 @@ public partial class NetworkScannerViewModel : ViewModelBase
         {
             await _scanner.ScanSubnetAsync(
                 prefix,
+                probeWebPorts: true,
                 progress: progress,
                 ct: _scanCts.Token);
-            Status = $"Varredura concluída: {Hosts.Count} host(s) online.";
+            var withWeb = Hosts.Count(h => h.HasWeb);
+            Status = $"Varredura concluída: {Hosts.Count} host(s) online" +
+                     (withWeb > 0 ? $", {withWeb} com interface web." : ".");
         }
         catch (OperationCanceledException)
         {

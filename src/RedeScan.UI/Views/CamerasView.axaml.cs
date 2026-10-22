@@ -1,7 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
+using Avalonia.VisualTree;
 using RedeScan.Core.Models;
 using RedeScan.UI.ViewModels;
 
@@ -82,116 +86,167 @@ public partial class CamerasView : UserControl
     {
         if (_vm is not null)
         {
-            _vm.PlayRequested -= OnPlayRequested;
-            _vm.StopRequested -= OnStopRequested;
+            _vm.PlaySlotRequested -= OnPlaySlotRequested;
+            _vm.StopSlotRequested -= OnStopSlotRequested;
+            _vm.StopAllRequested -= OnStopAllRequested;
+            _vm.SlotsChanged -= OnSlotsChanged;
         }
 
         _vm = DataContext as CamerasViewModel;
 
         if (_vm is not null)
         {
-            _vm.PlayRequested += OnPlayRequested;
-            _vm.StopRequested += OnStopRequested;
+            _vm.PlaySlotRequested += OnPlaySlotRequested;
+            _vm.StopSlotRequested += OnStopSlotRequested;
+            _vm.StopAllRequested += OnStopAllRequested;
+            _vm.SlotsChanged += OnSlotsChanged;
         }
     }
 
     private void OnUnloaded(object? sender, RoutedEventArgs e)
     {
 #if ENABLE_NATIVE_MEDIA
-        DisposeNative();
-#else
-        OnStopRequested();
+        StopAllNative();
 #endif
     }
 
-    private void OnPlayRequested(RtspCameraConfig camera)
+    private void OnSlotsChanged()
+    {
+#if ENABLE_NATIVE_MEDIA
+        // O layout mudou: para tudo e deixa a View recriar as superfícies ao
+        // reproduzir de novo. Evita VideoViews órfãos de slots removidos.
+        StopAllNative();
+#endif
+    }
+
+    private void OnPlaySlotRequested(CameraSlot slot, RtspCameraConfig camera)
     {
 #if ENABLE_NATIVE_MEDIA
         try
         {
-            PlayNative(camera);
+            PlayNative(slot, camera);
         }
         catch (Exception ex)
         {
-            // libvlc ausente/indisponível (comum no Linux sem o pacote vlc):
-            // informa no status em vez de derrubar a aplicação.
             if (_vm is not null)
             {
                 _vm.Status = "Não foi possível iniciar o vídeo nativo (libvlc ausente?). " +
-                             "Use 'Abrir no player externo'. Detalhe: " + ex.Message;
+                             "Use o player externo. Detalhe: " + ex.Message;
             }
         }
 #endif
     }
 
-    private void OnStopRequested()
+    private void OnStopSlotRequested(CameraSlot slot)
     {
 #if ENABLE_NATIVE_MEDIA
-        StopNative();
+        StopNative(slot);
+#endif
+    }
+
+    private void OnStopAllRequested()
+    {
+#if ENABLE_NATIVE_MEDIA
+        StopAllNative();
 #endif
     }
 
 #if ENABLE_NATIVE_MEDIA
-    private LibVLCSharp.Shared.LibVLC? _libVlc;
-    private LibVLCSharp.Shared.MediaPlayer? _mediaPlayer;
-    private LibVLCSharp.Avalonia.VideoView? _videoView;
-
-    private void EnsureVideoView()
+    private sealed class SlotPlayer
     {
-        LibVLCSharp.Shared.Core.Initialize();
-        _libVlc ??= new LibVLCSharp.Shared.LibVLC();
-        _mediaPlayer ??= new LibVLCSharp.Shared.MediaPlayer(_libVlc);
-
-        if (_videoView is null)
-        {
-            _videoView = new LibVLCSharp.Avalonia.VideoView { MediaPlayer = _mediaPlayer };
-            var host = this.FindControl<Panel>("PreviewHost");
-            var placeholder = this.FindControl<TextBlock>("PreviewPlaceholder");
-            host?.Children.Insert(0, _videoView);
-            if (placeholder is not null)
-            {
-                placeholder.IsVisible = false;
-            }
-        }
+        public LibVLCSharp.Shared.LibVLC LibVlc { get; init; } = null!;
+        public LibVLCSharp.Shared.MediaPlayer Player { get; init; } = null!;
+        public LibVLCSharp.Avalonia.VideoView View { get; init; } = null!;
+        public Panel Host { get; init; } = null!;
     }
 
-    private void PlayNative(RtspCameraConfig camera)
+    private readonly Dictionary<CameraSlot, SlotPlayer> _players = new();
+
+    private void PlayNative(CameraSlot slot, RtspCameraConfig camera)
     {
-        EnsureVideoView();
         var url = camera.GetAuthenticatedUrl();
-        if (string.IsNullOrWhiteSpace(url) || _libVlc is null || _mediaPlayer is null)
+        if (string.IsNullOrWhiteSpace(url))
         {
             return;
         }
 
-        using var media = new LibVLCSharp.Shared.Media(_libVlc, new Uri(url));
-        _mediaPlayer.Play(media);
-    }
-
-    private void StopNative()
-    {
-        if (_mediaPlayer is { IsPlaying: true })
+        // Localiza o Panel "SlotHost" do container visual deste slot.
+        var host = FindSlotHost(slot);
+        if (host is null)
         {
-            _mediaPlayer.Stop();
-        }
-    }
-
-    // Libera os recursos nativos do LibVLC ao sair da tela, evitando vazamento
-    // de handles do MediaPlayer/engine entre navegações.
-    private void DisposeNative()
-    {
-        StopNative();
-
-        if (_videoView is not null)
-        {
-            _videoView.MediaPlayer = null;
+            return;
         }
 
-        _mediaPlayer?.Dispose();
-        _mediaPlayer = null;
+        StopNative(slot);
 
-        _libVlc?.Dispose();
-        _libVlc = null;
+        LibVLCSharp.Shared.Core.Initialize();
+        var libVlc = new LibVLCSharp.Shared.LibVLC();
+        var player = new LibVLCSharp.Shared.MediaPlayer(libVlc);
+        var view = new LibVLCSharp.Avalonia.VideoView { MediaPlayer = player };
+
+        host.Children.Insert(0, view);
+        // Esconde o rótulo placeholder (demais filhos) enquanto reproduz.
+        for (var i = 1; i < host.Children.Count; i++)
+        {
+            host.Children[i].IsVisible = false;
+        }
+
+        _players[slot] = new SlotPlayer
+        {
+            LibVlc = libVlc,
+            Player = player,
+            View = view,
+            Host = host
+        };
+
+        using var media = new LibVLCSharp.Shared.Media(libVlc, new Uri(url));
+        player.Play(media);
+    }
+
+    private Panel? FindSlotHost(CameraSlot slot)
+    {
+        var grid = this.FindControl<ItemsControl>("VideoGrid");
+        if (grid is null)
+        {
+            return null;
+        }
+
+        var container = grid.ContainerFromItem(slot);
+        return container?.GetVisualDescendants()
+            .OfType<Panel>()
+            .FirstOrDefault(p => p.Name == "SlotHost");
+    }
+
+    private void StopNative(CameraSlot slot)
+    {
+        if (!_players.TryGetValue(slot, out var sp))
+        {
+            return;
+        }
+
+        if (sp.Player.IsPlaying)
+        {
+            sp.Player.Stop();
+        }
+
+        sp.Host.Children.Remove(sp.View);
+        for (var i = 0; i < sp.Host.Children.Count; i++)
+        {
+            sp.Host.Children[i].IsVisible = true;
+        }
+
+        sp.View.MediaPlayer = null;
+        sp.Player.Dispose();
+        sp.LibVlc.Dispose();
+        _players.Remove(slot);
+    }
+
+    private void StopAllNative()
+    {
+        foreach (var slot in _players.Keys.ToList())
+        {
+            StopNative(slot);
+        }
     }
 #endif
 }

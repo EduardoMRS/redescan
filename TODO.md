@@ -172,3 +172,10 @@ RedeScan/
 - [x] **Scanner de rede vazio:** resolvido junto com o ping (o sweep usa o `PingService`).
 - [x] **App não fechava / "travou":** fechar a janela encerra o app (`ShutdownMode.OnMainWindowClose`); o recolhimento para a bandeja passou a ser no **minimizar** — some o risco de processo invisível em Linux sem tray.
 - [x] **Navegador travava sem erro:** CEF embutido só no Windows; no Linux usa o fallback "abrir no sistema".
+
+---
+### 🔎📷 Scanner reaproveitando o scan rápido + grade de câmeras reformulada
+- [x] **Scanner usa o mesmo mecanismo do painel, com mais dados:** o `NetworkScannerService` ganhou sonda de portas web rápida (mesmas portas do painel, em paralelo, sem banner grabbing), ativada por `probeWebPorts`. O `NetworkHost` agora carrega `WebPorts`/`IsLikelyRouter`/`HasWeb`/`PreferredWebUrl`; o scanner liga `probeWebPorts: true` e mostra a coluna "Web" ao vivo. A inspeção pesada (SO/banners) continua sob demanda.
+- [x] **Câmeras — tabela à esquerda com busca e filtro:** `ListBox` de câmeras (nome + local + miniatura de prévia), com `SearchText` (nome/local) e `GroupFilter` (combo de grupos). `FilteredCameras` aplica os dois.
+- [x] **Câmeras — grade de vídeo 1 a 6 em tempo real:** seletor de layout (1–6); `ActiveSlots` + `CameraSlot` por posição; cada slot ganha seu próprio `MediaPlayer`/`VideoView` LibVLC (sob `ENABLE_NATIVE_MEDIA`), com parar por slot e parar tudo. `GridColumns` ajusta as colunas (1→1, 2→2, 3→3, 4→2, 5/6→3).
+- [x] **Câmeras — editor/criador em modal:** `CameraEditorWindow` + `CameraEditorViewModel`, abertos via `ICameraEditorDialog.EditAsync` (ShowDialog sobre a janela principal; no Android devolve a câmera sem modal). Substitui o editor inline.

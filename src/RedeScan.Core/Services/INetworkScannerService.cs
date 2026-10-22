@@ -11,6 +11,7 @@ public interface INetworkScannerService
         int timeoutMs = 800, 
         int maxConcurrency = 40,
         bool resolveDns = true,
+        bool probeWebPorts = false,
         IProgress<NetworkHost>? progress = null, 
         CancellationToken ct = default);
 }

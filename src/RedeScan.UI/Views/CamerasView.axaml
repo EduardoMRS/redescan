@@ -4,117 +4,135 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
              xmlns:models="clr-namespace:RedeScan.Core.Models;assembly=RedeScan.Core"
-             mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="560"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="580"
              x:Class="RedeScan.UI.Views.CamerasView"
              x:DataType="vm:CamerasViewModel">
 
     <DockPanel>
+        <!-- Barra de ações -->
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
             <Button Content="➕ Adicionar" Command="{Binding AddCameraCommand}" />
-            <Button Content="🗑 Remover" Command="{Binding RemoveCameraCommand}" IsEnabled="{Binding HasSelection}" />
+            <Button Content="✏ Editar" Command="{Binding EditCameraCommand}"
+                    CommandParameter="{Binding SelectedCamera}" IsEnabled="{Binding HasSelection}" />
+            <Button Content="🗑 Remover" Command="{Binding RemoveCameraCommand}"
+                    CommandParameter="{Binding SelectedCamera}" IsEnabled="{Binding HasSelection}" />
             <Button Content="💾 Salvar" Classes="accent" Command="{Binding SaveCommand}" />
+            <Border Width="1" Background="{DynamicResource RsHairline}" Margin="4,2" />
             <Button Content="📥 Importar rtspList.json" Click="OnImportClick" />
             <Button Content="📤 Exportar" Click="OnExportClick" />
         </StackPanel>
 
         <TextBlock DockPanel.Dock="Bottom" Classes="subtle" Text="{Binding Status}" Margin="0,8,0,0" TextWrapping="Wrap" />
 
-        <Grid ColumnDefinitions="*,12,300">
-            <!-- Grade de câmeras agrupada por grupo (host) -->
-            <Border Grid.Column="0" Classes="card">
-                <ScrollViewer>
-                    <ItemsControl ItemsSource="{Binding Groups}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:CameraGroup">
-                                <StackPanel Margin="0,0,0,14">
-                                    <!-- Cabeçalho do grupo -->
-                                    <Border Background="{DynamicResource RsAccentSoft}" CornerRadius="6"
-                                            Padding="10,5" Margin="0,0,0,6">
-                                        <TextBlock FontWeight="SemiBold">
-                                            <Run Text="📁" />
-                                            <Run Text="{Binding Name}" />
-                                            <Run Text="  (" /><Run Text="{Binding Cameras.Count}" /><Run Text=")" />
-                                        </TextBlock>
+        <Grid ColumnDefinitions="300,12,*">
+            <!-- ESQUERDA: tabela de câmeras com busca + filtro por grupo -->
+            <Border Grid.Column="0" Classes="card" Padding="10">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+                        <TextBox Text="{Binding SearchText}" Watermark="🔍 Buscar por nome ou local…" />
+                        <ComboBox ItemsSource="{Binding AvailableGroups}"
+                                  SelectedItem="{Binding GroupFilter}"
+                                  HorizontalAlignment="Stretch" />
+                    </StackPanel>
+
+                    <ListBox ItemsSource="{Binding FilteredCameras}"
+                             SelectedItem="{Binding SelectedCamera}"
+                             Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="models:RtspCameraConfig">
+                                <Grid ColumnDefinitions="56,8,*" Margin="0,2">
+                                    <!-- Miniatura de prévia -->
+                                    <Border Grid.Column="0" Width="56" Height="40"
+                                            Background="#30000000" CornerRadius="4"
+                                            BorderBrush="{DynamicResource RsHairline}" BorderThickness="1">
+                                        <TextBlock Text="📷" FontSize="18"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   Opacity="0.5" />
                                     </Border>
-                                    <!-- Câmeras do grupo -->
-                                    <ItemsControl ItemsSource="{Binding Cameras}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <UniformGrid Columns="3" />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate x:DataType="models:RtspCameraConfig">
-                                                <Border Margin="4" MinHeight="120"
-                                                        Background="#20000000"
-                                                        BorderBrush="{DynamicResource RsAccent}"
-                                                        BorderThickness="1" CornerRadius="8">
-                                                    <Border.ContextMenu>
-                                                        <ContextMenu>
-                                                            <MenuItem Header="Abrir no player externo"
-                                                                      Command="{Binding $parent[ItemsControl].((vm:CamerasViewModel)DataContext).OpenExternalCommand}"
-                                                                      CommandParameter="{Binding}" />
-                                                            <MenuItem Header="Editar"
-                                                                      Command="{Binding $parent[ItemsControl].((vm:CamerasViewModel)DataContext).EditCameraCommand}"
-                                                                      CommandParameter="{Binding}" />
-                                                        </ContextMenu>
-                                                    </Border.ContextMenu>
-                                                    <Grid RowDefinitions="*,Auto">
-                                                        <TextBlock Grid.Row="0" Text="▶ stream"
-                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                                   Opacity="0.4" />
-                                                        <Border Grid.Row="1" Background="#40000000" Padding="8,4">
-                                                            <StackPanel>
-                                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                                                                <TextBlock Text="{Binding Location}" Classes="subtle" FontSize="10" />
-                                                            </StackPanel>
-                                                        </Border>
-                                                    </Grid>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </StackPanel>
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="1">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Classes="subtle" FontSize="10"
+                                                   TextTrimming="CharacterEllipsis">
+                                            <Run Text="{Binding Group}" />
+                                            <Run Text=" · " />
+                                            <Run Text="{Binding Location}" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                        <ListBox.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="▶ Reproduzir (slot livre)"
+                                          Command="{Binding PlaySelectedCommand}" />
+                                <MenuItem Header="✏ Editar"
+                                          Command="{Binding EditCameraCommand}"
+                                          CommandParameter="{Binding SelectedCamera}" />
+                                <MenuItem Header="↗ Abrir no player externo"
+                                          Command="{Binding OpenExternalCommand}"
+                                          CommandParameter="{Binding SelectedCamera}" />
+                                <Separator />
+                                <MenuItem Header="🗑 Remover"
+                                          Command="{Binding RemoveCameraCommand}"
+                                          CommandParameter="{Binding SelectedCamera}" />
+                            </ContextMenu>
+                        </ListBox.ContextMenu>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <!-- DIREITA: grade de vídeo em tempo real (1 a 6 câmeras) -->
+            <DockPanel Grid.Column="2">
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
+                    <TextBlock Text="Layout:" VerticalAlignment="Center" Classes="subtle" />
+                    <ComboBox ItemsSource="{Binding LayoutOptions}"
+                              SelectedItem="{Binding VideoLayout}" Width="80" />
+                    <TextBlock Text="câmera(s)" VerticalAlignment="Center" Classes="subtle" />
+                    <Button Content="▶ Reproduzir selecionada" Command="{Binding PlaySelectedCommand}"
+                            IsEnabled="{Binding HasSelection}" />
+                    <Button Content="⏹ Parar tudo" Command="{Binding StopAllCommand}" />
+                </StackPanel>
+
+                <Border Classes="card" Padding="6">
+                    <ItemsControl Name="VideoGrid" ItemsSource="{Binding ActiveSlots}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="{Binding GridColumns}" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:CameraSlot">
+                                <Border Margin="4" MinHeight="140"
+                                        Background="#20000000"
+                                        BorderBrush="{DynamicResource RsHairline}"
+                                        BorderThickness="1" CornerRadius="8"
+                                        Tag="{Binding}">
+                                    <Grid RowDefinitions="*,Auto">
+                                        <!-- Host do vídeo deste slot (preenchido no code-behind) -->
+                                        <Panel Grid.Row="0" Name="SlotHost">
+                                            <TextBlock Text="{Binding Label}"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Opacity="0.45" TextWrapping="Wrap" TextAlignment="Center" />
+                                        </Panel>
+                                        <Border Grid.Row="1" Background="#40000000" Padding="8,4"
+                                                IsVisible="{Binding HasCamera}">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Grid.Column="0" Text="{Binding Camera.Name}"
+                                                           FontWeight="SemiBold" VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <Button Grid.Column="1" Content="⏹" Padding="6,2"
+                                                        Command="{Binding $parent[ItemsControl].((vm:CamerasViewModel)DataContext).StopSlotCommand}"
+                                                        CommandParameter="{Binding}" />
+                                            </Grid>
+                                        </Border>
+                                    </Grid>
+                                </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                </ScrollViewer>
-            </Border>
-
-            <!-- Editor + preview da câmera selecionada -->
-            <StackPanel Grid.Column="2" Spacing="6" IsVisible="{Binding HasSelection}">
-                <TextBlock Classes="h2" Text="Pré-visualização" />
-                <Border Height="160" Background="#30000000" CornerRadius="6">
-                    <Panel Name="PreviewHost">
-                        <TextBlock Name="PreviewPlaceholder"
-                                   Text="▶ Reproduzir para ver o stream"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   Opacity="0.4" TextWrapping="Wrap" TextAlignment="Center" />
-                    </Panel>
                 </Border>
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Content="▶ Reproduzir" Command="{Binding PlaySelectedCommand}" />
-                    <Button Content="⏹ Parar" Command="{Binding StopSelectedCommand}" />
-                    <Button Content="↗ Player externo"
-                            Command="{Binding OpenExternalCommand}"
-                            CommandParameter="{Binding SelectedCamera}" />
-                </StackPanel>
-
-                <TextBlock Classes="h2" Text="Editar câmera" Margin="0,8,0,0" />
-                <TextBlock Text="Nome" Classes="subtle" />
-                <TextBox Text="{Binding SelectedCamera.Name}" />
-                <TextBlock Text="Grupo (host)" Classes="subtle" />
-                <TextBox Text="{Binding SelectedCamera.Group}" Watermark="ex.: Matriz, Filial A" />
-                <TextBlock Text="Localização" Classes="subtle" />
-                <TextBox Text="{Binding SelectedCamera.Location}" Watermark="ex.: Recepção" />
-                <TextBlock Text="URL do stream (RTSP)" Classes="subtle" />
-                <TextBox Text="{Binding SelectedCamera.Url}" Watermark="rtsp://ip:554/..." />
-                <TextBlock Text="Usuário" Classes="subtle" />
-                <TextBox Text="{Binding SelectedCamera.Username}" />
-                <TextBlock Text="Senha" Classes="subtle" />
-                <TextBox Text="{Binding SelectedCamera.Password}" PasswordChar="•" />
-                <CheckBox Content="Habilitada" IsChecked="{Binding SelectedCamera.IsEnabled}" />
-            </StackPanel>
+            </DockPanel>
         </Grid>
     </DockPanel>
 </UserControl>

@@ -87,7 +87,8 @@
                     <DataGridTextColumn Header="IP" Binding="{Binding IpAddress}" Width="130" />
                     <DataGridTextColumn Header="Hostname" Binding="{Binding Hostname}" Width="*" />
                     <DataGridTextColumn Header="Fabricante" Binding="{Binding Vendor}" Width="130" />
-                    <DataGridTextColumn Header="Latência (ms)" Binding="{Binding RoundtripTimeMs}" Width="110" />
+                    <DataGridTextColumn Header="Web" Binding="{Binding WebSummary}" Width="90" />
+                    <DataGridTextColumn Header="Latência (ms)" Binding="{Binding RoundtripTimeMs}" Width="100" />
                 </DataGrid.Columns>
             </DataGrid>
 
