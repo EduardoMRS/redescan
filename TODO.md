@@ -34,12 +34,13 @@ RedeScan/
 - [x] Instalar o SDK do **.NET 8** no ambiente de usuário (`~/.dotnet`).
 - [ ] Instalar templates do Avalonia UI (`dotnet new install Avalonia.Templates`).
 - [x] Criar a nova estrutura de solução e projeto Core (`RedeScan.sln`, `src/RedeScan.Core`, `tests/RedeScan.Core.Tests`).
-- [ ] Criar projetos de UI e Runner (`RedeScan.UI`, `RedeScan.Desktop`).
+- [x] Criar projetos de UI e Runner (`RedeScan.UI`, `RedeScan.Desktop`).
 - [ ] Configurar pacotes essenciais:
-  - `Avalonia` e `Avalonia.Themes.Fluent`
-  - `CommunityToolkit.Mvvm` (padrão MVVM com Source Generators)
-  - `Avalonia.WebView` (navegador multiplataforma integrado)
-  - `LibVLCSharp.Avalonia` + `VideoLAN.LibVLC.*` (reprodução de stream RTSP)
+  - [x] `Avalonia` e `Avalonia.Themes.Fluent` (v11.2.3)
+  - [x] `CommunityToolkit.Mvvm` (padrão MVVM com Source Generators)
+  - [x] `Avalonia.Controls.DataGrid` + `Avalonia.Fonts.Inter`
+  - [ ] `Avalonia.WebView` (navegador multiplataforma integrado) — *adiado: dependências nativas complicam o publish; por ora usa-se o navegador do sistema no módulo de Atalhos.*
+  - [ ] `LibVLCSharp.Avalonia` + `VideoLAN.LibVLC.*` (reprodução de stream RTSP) — *adiado: grade de câmeras já pronta com placeholder de vídeo; integrar o render depois.*
   - [x] `Microsoft.Extensions.DependencyInjection` (injeção de dependência)
   - [x] `System.Text.Json` (gerenciamento de perfis e configurações)
 
@@ -86,24 +87,33 @@ RedeScan/
 
 ---
 
-### 📌 Fase 3: Camada de Apresentação (Avalonia UI & MVVM)
-- [ ] **Layout Principal & Navegação:**
-  - [ ] Menu lateral expansível (Sidebar Navigation) com ícones e transições fluidas.
-  - [ ] Suporte nativo a Tema Escuro (Dark) e Claro (Light).
-- [ ] **Módulo 1: Visualizador em Grid de Câmeras RTSP:**
-  - [ ] Integração com `LibVLCSharp.Avalonia`.
-  - [ ] Layout com `UniformGrid` dinâmico (1x1, 2x2, 3x3 ou automático conforme a contagem de câmeras ativas).
-  - [ ] Diálogo/Modal para adicionar, editar e remover câmeras salvas no JSON.
-- [ ] **Módulo 2: Scanner de Rede Local & Portas:**
-  - [ ] Tabela interativa com filtros, status (Online/Offline), latência e fabricante (OUI lookup opcional).
-  - [ ] Ação rápida: clicar com o botão direito para iniciar Scan de Portas ou abrir no navegador interno.
-- [ ] **Módulo 3: Ferramentas de Diagnóstico (Ping, Tracert, Estresse):**
-  - [ ] Exibição gráfica da variação de latência ao longo do tempo.
-  - [ ] Painel do Simulador de Carga com controles de segurança e contadores de pacotes em tempo real.
-- [ ] **Módulo 4: Scanner de Espectro / Canais Wi-Fi:**
-  - [ ] Visualização em gráfico de colunas ou curvas dos canais 2.4 GHz e 5 GHz para identificar sobreposição e interferência.
-- [ ] **Módulo 5: Navegador Web Interno:**
-  - [ ] Integração do `Avalonia.WebView` para carregar interfaces web dos roteadores ou ferramentas como o Fast.com.
+### 📌 Fase 3: Camada de Apresentação (Avalonia UI & MVVM) — 🔄 Em andamento
+- [x] **Layout Principal & Navegação:**
+  - [x] Menu lateral (Sidebar Navigation) com ícones, dirigido por `MainWindowViewModel` + `ViewLocator`.
+  - [x] Suporte a Tema Escuro (Dark) e Claro (Light) com alternância em runtime.
+- [x] **Módulo 1: Visualizador em Grid de Câmeras RTSP:**
+  - [ ] Integração com `LibVLCSharp.Avalonia` (render do stream) — *pendente; grade e placeholder prontos.*
+  - [x] Layout com `UniformGrid` dinâmico (colunas calculadas conforme a contagem de câmeras ativas).
+  - [x] Adicionar, editar e remover câmeras salvas no JSON (credenciais via `RtspCameraConfig`, sem hardcode).
+- [x] **Módulo 2: Scanner de Rede Local & Portas:**
+  - [x] `DataGrid` interativo com status online, latência e seleção de host; resultados ao vivo via `IProgress`.
+  - [x] Scan de portas conhecidas do host selecionado, cancelável.
+  - [x] Lookup de fabricante (OUI) via tabela ARP do SO (`ArpService` + `OuiVendorLookup`), exibido na grade.
+  - [ ] Menu de contexto (botão direito) para ações rápidas — *opcional, pendente.*
+- [x] **Módulo 3: Ferramentas de Diagnóstico (Ping, Tracert, Estresse):**
+  - [x] Ping contínuo com histórico, média de latência e % de perda; traceroute ao vivo.
+  - [x] Painel do Simulador de Carga com controles de segurança e contadores em tempo real.
+  - [x] Gráfico de variação de latência ao longo do tempo (`SparklineControl`, sem dependências externas).
+- [x] **Módulo 4: Scanner de Espectro / Canais Wi-Fi:**
+  - [x] Listagem das redes com sinal %, RSSI dBm, canal, banda e segurança.
+  - [x] Gráfico de colunas de ocupação por canal (2.4/5 GHz) para visualizar sobreposição.
+- [x] **Módulo 5: Navegador / Atalhos de Rede:**
+  - [x] Atalhos de roteadores e ferramentas web persistidos em JSON, abertos no navegador do sistema (multiplataforma).
+  - [ ] Navegador embutido via `Avalonia.WebView` — *adiado por dependências nativas no publish.*
+
+> **Nota:** a solução inteira compila com 0 erros, os 11 testes continuam passando e o `RedeScan.Desktop` publica como executável self-contained em `linux-x64` e `win-x64`.
+>
+> **Open source / segurança:** removida a assinatura de assembly/manifest e o `.pfx` do projeto legado; nenhum atributo proprietário de copyright/trademark permanece. Não há strings de conexão de banco de dados em nenhum projeto. O `.gitignore` agora ignora `*.pfx`/`*.snk`/`*.key`, `.env`, `secrets.json`, `config.json` e o diretório interno `.dd/`.
 
 ---
 

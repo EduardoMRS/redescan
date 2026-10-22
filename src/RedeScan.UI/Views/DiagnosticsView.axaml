@@ -1,0 +1,124 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
+             xmlns:ctl="clr-namespace:RedeScan.UI.Controls"
+             mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="560"
+             x:Class="RedeScan.UI.Views.DiagnosticsView"
+             x:DataType="vm:DiagnosticsViewModel">
+
+    <TabControl>
+        <!-- PING -->
+        <TabItem Header="Ping">
+            <DockPanel Margin="0,12,0,0">
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
+                    <TextBox Text="{Binding PingTarget}" Width="200" Watermark="host ou IP" />
+                    <Button Content="Iniciar" Command="{Binding StartPingCommand}" IsVisible="{Binding !IsPinging}" />
+                    <Button Content="Parar" Command="{Binding StartPingCommand}" IsVisible="{Binding IsPinging}" />
+                </StackPanel>
+                <TextBlock DockPanel.Dock="Top" Classes="subtle" Text="{Binding PingStats}" Margin="0,0,0,8" />
+                <Border DockPanel.Dock="Top" Classes="card" Height="110" Margin="0,0,0,8">
+                    <ctl:SparklineControl Values="{Binding LatencySeries}"
+                                          Stroke="{DynamicResource SystemAccentColor}"
+                                          StrokeThickness="2" />
+                </Border>
+                <DataGrid ItemsSource="{Binding PingHistory}" IsReadOnly="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Horário" Binding="{Binding Timestamp, StringFormat=HH:mm:ss}" Width="100" />
+                        <DataGridTextColumn Header="OK" Binding="{Binding Success}" Width="60" />
+                        <DataGridTextColumn Header="RTT (ms)" Binding="{Binding RoundtripTimeMs}" Width="90" />
+                        <DataGridTextColumn Header="TTL" Binding="{Binding Ttl}" Width="60" />
+                        <DataGridTextColumn Header="Erro" Binding="{Binding ErrorMessage}" Width="*" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </TabItem>
+
+        <!-- TRACEROUTE -->
+        <TabItem Header="Traceroute">
+            <DockPanel Margin="0,12,0,0">
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
+                    <TextBox Text="{Binding TracerouteTarget}" Width="200" Watermark="host ou IP" />
+                    <Button Content="Rastrear" Command="{Binding TracerouteCommand}" IsVisible="{Binding !IsTracing}" />
+                    <Button Content="Parar" Command="{Binding TracerouteCommand}" IsVisible="{Binding IsTracing}" />
+                    <ProgressBar IsIndeterminate="True" Width="120" IsVisible="{Binding IsTracing}" VerticalAlignment="Center" />
+                </StackPanel>
+                <DataGrid ItemsSource="{Binding Hops}" IsReadOnly="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="#" Binding="{Binding HopNumber}" Width="50" />
+                        <DataGridTextColumn Header="IP" Binding="{Binding IpAddress}" Width="150" />
+                        <DataGridTextColumn Header="Hostname" Binding="{Binding Hostname}" Width="*" />
+                        <DataGridTextColumn Header="RTT (ms)" Binding="{Binding RoundtripTimeMs}" Width="90" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </TabItem>
+
+        <!-- TESTE DE CARGA -->
+        <TabItem Header="Teste de Carga">
+            <ScrollViewer>
+                <StackPanel Margin="0,12,0,0" Spacing="4">
+                    <Border Classes="card">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="⚠️ Use apenas em redes e equipamentos próprios ou autorizados."
+                                       Classes="subtle" TextWrapping="Wrap" />
+                            <Grid ColumnDefinitions="140,*,140,*" RowDefinitions="Auto,Auto,Auto,Auto" >
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Host alvo" VerticalAlignment="Center" />
+                                <TextBox  Grid.Row="0" Grid.Column="1" Text="{Binding LoadConfig.TargetHost}" Margin="0,4" />
+                                <TextBlock Grid.Row="0" Grid.Column="2" Text="Porta" VerticalAlignment="Center" Margin="12,0,0,0" />
+                                <NumericUpDown Grid.Row="0" Grid.Column="3" Value="{Binding LoadConfig.TargetPort}" Minimum="1" Maximum="65535" Margin="0,4" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Protocolo" VerticalAlignment="Center" />
+                                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Protocols}"
+                                          SelectedItem="{Binding LoadConfig.Protocol}" HorizontalAlignment="Stretch" Margin="0,4" />
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="Concorrência" VerticalAlignment="Center" Margin="12,0,0,0" />
+                                <NumericUpDown Grid.Row="1" Grid.Column="3" Value="{Binding LoadConfig.Concurrency}" Minimum="1" Maximum="1000" Margin="0,4" />
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Duração (s)" VerticalAlignment="Center" />
+                                <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding LoadConfig.DurationSeconds}" Minimum="1" Maximum="600" Margin="0,4" />
+                                <TextBlock Grid.Row="2" Grid.Column="2" Text="Tam. pacote" VerticalAlignment="Center" Margin="12,0,0,0" />
+                                <NumericUpDown Grid.Row="2" Grid.Column="3" Value="{Binding LoadConfig.PacketSizeBytes}" Minimum="1" Maximum="65535" Margin="0,4" />
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Iniciar teste" Command="{Binding StartLoadTestCommand}" IsVisible="{Binding !IsLoadTesting}" />
+                                <Button Content="Parar" Command="{Binding StartLoadTestCommand}" IsVisible="{Binding IsLoadTesting}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="Métricas em tempo real" Classes="h2" />
+                    <Border Classes="card">
+                        <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto">
+                            <StackPanel Grid.Row="0" Grid.Column="0">
+                                <TextBlock Text="Pacotes/s" Classes="subtle" />
+                                <TextBlock Text="{Binding LoadMetrics.PacketsPerSecond, StringFormat='{}{0:F0}'}" FontSize="20" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="0" Grid.Column="1">
+                                <TextBlock Text="Mbps" Classes="subtle" />
+                                <TextBlock Text="{Binding LoadMetrics.MegabitsPerSecond, StringFormat='{}{0:F2}'}" FontSize="20" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="0" Grid.Column="2">
+                                <TextBlock Text="Pacotes enviados" Classes="subtle" />
+                                <TextBlock Text="{Binding LoadMetrics.PacketsSent}" FontSize="20" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,8,0,0">
+                                <TextBlock Text="Sucessos" Classes="subtle" />
+                                <TextBlock Text="{Binding LoadMetrics.RequestsSucceeded}" FontSize="16" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,8,0,0">
+                                <TextBlock Text="Falhas" Classes="subtle" />
+                                <TextBlock Text="{Binding LoadMetrics.RequestsFailed}" FontSize="16" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,8,0,0">
+                                <TextBlock Text="Decorrido" Classes="subtle" />
+                                <TextBlock Text="{Binding LoadMetrics.ElapsedTime, StringFormat='{}{0:mm\\:ss}'}" FontSize="16" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <TextBlock Classes="subtle" Text="{Binding LoadStatus}" TextWrapping="Wrap" />
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+    </TabControl>
+</UserControl>

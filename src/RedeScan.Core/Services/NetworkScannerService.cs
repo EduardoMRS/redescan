@@ -7,10 +7,17 @@ namespace RedeScan.Core.Services;
 public class NetworkScannerService : INetworkScannerService
 {
     private readonly IPingService _pingService;
+    private readonly IArpService? _arpService;
+    private readonly IOuiVendorLookup? _vendorLookup;
 
-    public NetworkScannerService(IPingService pingService)
+    public NetworkScannerService(
+        IPingService pingService,
+        IArpService? arpService = null,
+        IOuiVendorLookup? vendorLookup = null)
     {
         _pingService = pingService;
+        _arpService = arpService;
+        _vendorLookup = vendorLookup;
     }
 
     public async Task<IReadOnlyList<NetworkHost>> ScanSubnetAsync(
@@ -55,12 +62,22 @@ public class NetworkScannerService : INetworkScannerService
                     }
                 }
 
+                string? mac = null;
+                string? vendor = null;
+                if (_arpService is not null)
+                {
+                    mac = await _arpService.GetMacAddressAsync(targetIp, token);
+                    vendor = _vendorLookup?.Lookup(mac);
+                }
+
                 var host = new NetworkHost
                 {
                     IpAddress = targetIp,
                     Hostname = hostname,
                     RoundtripTimeMs = pingResult.RoundtripTimeMs,
                     IsOnline = true,
+                    MacAddress = mac,
+                    Vendor = vendor,
                     DiscoveredAt = DateTime.UtcNow
                 };
 

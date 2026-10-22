@@ -40,13 +40,14 @@ jobs:
       - name: Executar testes automatizados
         run: dotnet test RedeScan.sln --configuration Release --no-build --verbosity normal
 
-      - name: Publicar aplicação em lote
+      - name: Publicar aplicação desktop
         run: >
-          dotnet publish src/RedeScan.Core/RedeScan.Core.csproj
+          dotnet publish src/RedeScan.Desktop/RedeScan.Desktop.csproj
           --configuration Release
           --runtime ${{ matrix.target.rid }}
           --self-contained true
           -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
           --output ./publish/${{ matrix.target.rid }}
 
       - name: Armazenar artefatos gerados

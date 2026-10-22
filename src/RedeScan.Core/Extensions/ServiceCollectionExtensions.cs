@@ -10,6 +10,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<INetworkInterfaceService, NetworkInterfaceService>();
         services.AddSingleton<IPingService, PingService>();
+        services.AddSingleton<IArpService, ArpService>();
+        services.AddSingleton<IOuiVendorLookup, OuiVendorLookup>();
         services.AddSingleton<INetworkScannerService, NetworkScannerService>();
         services.AddSingleton<IPortScannerService, PortScannerService>();
         services.AddSingleton<ILoadTestService, LoadTestService>();

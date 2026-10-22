@@ -1,0 +1,62 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
+        x:Class="RedeScan.UI.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="RedeScan" Width="1100" Height="700"
+        MinWidth="820" MinHeight="520">
+
+    <Grid ColumnDefinitions="240,*">
+
+        <!-- Barra lateral -->
+        <Border Grid.Column="0" Background="{DynamicResource LayerFillColorDefaultBrush}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="16,18,16,12" Spacing="2">
+                    <TextBlock Text="RedeScan" Classes="h1" />
+                    <TextBlock Text="Análise &amp; Teste de Redes" Classes="subtle" />
+                </StackPanel>
+
+                <!-- Rodapé: alternar tema -->
+                <Button DockPanel.Dock="Bottom"
+                        Classes="nav"
+                        Command="{Binding ToggleThemeCommand}"
+                        Margin="6,2,6,12">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="🎨" />
+                        <TextBlock Text="Alternar tema" />
+                    </StackPanel>
+                </Button>
+
+                <!-- Itens de navegação -->
+                <ItemsControl ItemsSource="{Binding Pages}" Margin="0,8,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ViewModelBase">
+                            <Button Classes="nav"
+                                    Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).NavigateCommand}"
+                                    CommandParameter="{Binding}">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="{Binding Icon}" FontSize="16" />
+                                    <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </DockPanel>
+        </Border>
+
+        <!-- Conteúdo do módulo ativo -->
+        <Border Grid.Column="1" Padding="24">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top"
+                           Classes="h1"
+                           Margin="0,0,0,16"
+                           Text="{Binding CurrentPage.Title}" />
+                <ContentControl Content="{Binding CurrentPage}" />
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

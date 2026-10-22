@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="560"
+             x:Class="RedeScan.UI.Views.NetworkScannerView"
+             x:DataType="vm:NetworkScannerViewModel">
+
+    <DockPanel>
+        <!-- Controles -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
+            <TextBlock Text="Prefixo:" VerticalAlignment="Center" />
+            <TextBox Text="{Binding SubnetPrefix}" Width="160" Watermark="192.168.0" />
+            <Button Content="Varrer sub-rede"
+                    Command="{Binding ScanSubnetCommand}"
+                    IsVisible="{Binding !IsScanning}" />
+            <Button Content="Cancelar"
+                    Command="{Binding ScanSubnetCancelCommand}"
+                    IsVisible="{Binding IsScanning}" />
+            <ProgressBar IsIndeterminate="True" Width="120"
+                         IsVisible="{Binding IsScanning}" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <TextBlock DockPanel.Dock="Bottom" Classes="subtle" Text="{Binding Status}" Margin="0,8,0,0" />
+
+        <Grid ColumnDefinitions="*,12,320">
+            <!-- Hosts encontrados -->
+            <DataGrid Grid.Column="0"
+                      ItemsSource="{Binding Hosts}"
+                      SelectedItem="{Binding SelectedHost}"
+                      IsReadOnly="True"
+                      GridLinesVisibility="Horizontal"
+                      CanUserReorderColumns="True">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="IP" Binding="{Binding IpAddress}" Width="130" />
+                    <DataGridTextColumn Header="Hostname" Binding="{Binding Hostname}" Width="*" />
+                    <DataGridTextColumn Header="Fabricante" Binding="{Binding Vendor}" Width="130" />
+                    <DataGridTextColumn Header="Latência (ms)" Binding="{Binding RoundtripTimeMs}" Width="110" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Painel de portas -->
+            <DockPanel Grid.Column="2">
+                <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+                    <TextBlock Classes="h2" Text="Portas abertas" />
+                    <TextBlock Classes="subtle" Text="{Binding SelectedHost.IpAddress, FallbackValue='Selecione um host'}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Escanear portas"
+                                Command="{Binding ScanPortsCommand}"
+                                IsVisible="{Binding !IsScanningPorts}" />
+                        <Button Content="Cancelar"
+                                Command="{Binding CancelPortScanCommand}"
+                                IsVisible="{Binding IsScanningPorts}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <DataGrid ItemsSource="{Binding OpenPorts}" IsReadOnly="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Porta" Binding="{Binding Port}" Width="70" />
+                        <DataGridTextColumn Header="Serviço" Binding="{Binding ServiceName}" Width="*" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </Grid>
+    </DockPanel>
+</UserControl>

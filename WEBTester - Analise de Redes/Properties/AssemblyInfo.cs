@@ -8,10 +8,10 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("WEBTester - Analise de Redes")]
 [assembly: AssemblyDescription("Gerenciamento e Teste de Redes")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("EncDesign")]
+[assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("WEBTester - Analise de Redes")]
-[assembly: AssemblyCopyright("Copyright ©  2021")]
-[assembly: AssemblyTrademark("EncGroup")]
+[assembly: AssemblyCopyright("")]
+[assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
 // Definir ComVisible como false torna os tipos neste assembly invisíveis

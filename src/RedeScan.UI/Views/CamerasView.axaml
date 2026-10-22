@@ -1,0 +1,69 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
+             xmlns:models="clr-namespace:RedeScan.Core.Models;assembly=RedeScan.Core"
+             mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="560"
+             x:Class="RedeScan.UI.Views.CamerasView"
+             x:DataType="vm:CamerasViewModel">
+
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
+            <Button Content="➕ Adicionar" Command="{Binding AddCameraCommand}" />
+            <Button Content="🗑 Remover" Command="{Binding RemoveCameraCommand}" IsEnabled="{Binding HasSelection}" />
+            <Button Content="💾 Salvar" Command="{Binding SaveCommand}" />
+        </StackPanel>
+
+        <TextBlock DockPanel.Dock="Bottom" Classes="subtle" Text="{Binding Status}" Margin="0,8,0,0" TextWrapping="Wrap" />
+
+        <Grid ColumnDefinitions="*,12,300">
+            <!-- Grade de câmeras -->
+            <Border Grid.Column="0" Classes="card">
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding Cameras}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="{Binding GridColumns}" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:RtspCameraConfig">
+                                <Border Margin="4" MinHeight="140"
+                                        Background="#20000000"
+                                        BorderBrush="{DynamicResource SystemAccentColor}"
+                                        BorderThickness="1" CornerRadius="8">
+                                    <Grid RowDefinitions="*,Auto">
+                                        <!-- Área do stream: integração LibVLCSharp entra aqui -->
+                                        <TextBlock Grid.Row="0" Text="▶ stream"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   Opacity="0.4" />
+                                        <Border Grid.Row="1" Background="#40000000" Padding="8,4">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Editor da câmera selecionada -->
+            <StackPanel Grid.Column="2" Spacing="6" IsVisible="{Binding HasSelection}">
+                <TextBlock Classes="h2" Text="Editar câmera" />
+                <TextBlock Text="Nome" Classes="subtle" />
+                <TextBox Text="{Binding SelectedCamera.Name}" />
+                <TextBlock Text="Grupo" Classes="subtle" />
+                <TextBox Text="{Binding SelectedCamera.Group}" />
+                <TextBlock Text="URL do stream (RTSP)" Classes="subtle" />
+                <TextBox Text="{Binding SelectedCamera.StreamUrl}" Watermark="rtsp://ip:554/..." />
+                <TextBlock Text="Usuário" Classes="subtle" />
+                <TextBox Text="{Binding SelectedCamera.Username}" />
+                <TextBlock Text="Senha" Classes="subtle" />
+                <TextBox Text="{Binding SelectedCamera.Password}" PasswordChar="•" />
+                <CheckBox Content="Habilitada" IsChecked="{Binding SelectedCamera.IsEnabled}" />
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+</UserControl>

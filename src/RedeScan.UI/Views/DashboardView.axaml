@@ -1,0 +1,42 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="520"
+             x:Class="RedeScan.UI.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+
+    <ScrollViewer>
+        <StackPanel Spacing="4">
+            <Border Classes="card">
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Host" Classes="subtle" />
+                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding HostName}" />
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="IP local" Classes="subtle" Margin="0,8,0,0" />
+                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LocalIp}" Margin="0,8,0,0" />
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Gateway" Classes="subtle" Margin="0,8,0,0" />
+                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Gateway}" Margin="0,8,0,0" />
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Sub-rede" Classes="subtle" Margin="0,8,0,0" />
+                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SubnetPrefix}" Margin="0,8,0,0" />
+                </Grid>
+            </Border>
+
+            <TextBlock Text="Interfaces ativas" Classes="h2" />
+            <Border Classes="card">
+                <ItemsControl ItemsSource="{Binding ActiveInterfaces}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" Margin="0,2" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+
+            <Button Content="🔄 Atualizar" Command="{Binding RefreshCommand}" HorizontalAlignment="Left" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -267,7 +267,6 @@ ClientBin/
 *.dbproj.schemaview
 *.jfm
 *.pfx
-!*TemporaryKey.pfx
 *.publishsettings
 orleans.codegen.cs
 
@@ -446,3 +445,29 @@ Thumbs.db
 context/
 
 
+
+# ---------------------------------------------------------------------------
+# RedeScan — entradas adicionais
+# ---------------------------------------------------------------------------
+
+# Diretório interno da ferramenta de desenvolvimento (cache de operações)
+.dd/
+
+# Saída de publish self-contained (gerada pelo CI/local)
+/publish/
+
+# Certificados e chaves de assinatura — NÃO versionar (projeto open source)
+*.pfx
+*.snk
+*.p12
+*.key
+
+# Arquivos de ambiente e segredos
+*.env
+.env
+.env.*
+appsettings.*.local.json
+secrets.json
+
+# Configuração local do RedeScan gerada em runtime (contém hosts/câmeras do usuário)
+config.json
