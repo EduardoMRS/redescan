@@ -5,7 +5,7 @@
     Ao publicar uma nova versão, atualize AQUI (e crie a tag vX.Y.Z).
   -->
   <PropertyGroup>
-    <RedeScanVersion>1.0.1</RedeScanVersion>
+    <RedeScanVersion>1.0.2</RedeScanVersion>
     <Version>$(RedeScanVersion)</Version>
     <AssemblyVersion>$(RedeScanVersion).0</AssemblyVersion>
     <FileVersion>$(RedeScanVersion).0</FileVersion>

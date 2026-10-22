@@ -22,6 +22,7 @@ public static class Composition
         services.AddSingleton<ISystemBrowserLauncher, SystemBrowserLauncher>();
         services.AddSingleton<IBackgroundMonitor, BackgroundMonitor>();
         services.AddSingleton<ICameraEditorDialog, CameraEditorDialog>();
+        services.AddSingleton<IWebDeviceRegistry, WebDeviceRegistry>();
 
         // ViewModels da camada de apresentação (Fase 3).
         services.AddSingleton<MainWindowViewModel>();
@@ -35,10 +36,12 @@ public static class Composition
         services.AddSingleton<NetworkConfigViewModel>();
         services.AddSingleton<TerminalViewModel>();
         services.AddSingleton<TftpViewModel>();
+        services.AddSingleton<SettingsViewModel>();
 
-        // IAppNavigator é o próprio MainWindowViewModel (resolvido sob demanda
-        // para evitar ciclo com os ViewModels que o consomem).
+        // IAppNavigator e IShellPreferences são o próprio MainWindowViewModel
+        // (resolvidos sob demanda para evitar ciclo com os VMs que os consomem).
         services.AddSingleton<IAppNavigator>(sp => sp.GetRequiredService<MainWindowViewModel>());
+        services.AddSingleton<IShellPreferences>(sp => sp.GetRequiredService<MainWindowViewModel>());
 
         return services.BuildServiceProvider();
     }

@@ -184,3 +184,12 @@ RedeScan/
 ### 🔌 Scan de portas completo + 🧬 VLAN na config de rede
 - [x] **Scan de portas — modo completo:** além das ~28 portas conhecidas (rápido), a aba "Portas" do scanner ganhou a opção "Varrer todas as portas (1–65535)". No modo completo usa timeout curto (300ms) e concorrência alta (600) para compensar o volume; mantém o nome do serviço nas portas conhecidas.
 - [x] **VLAN 802.1Q na configuração de rede:** nova seção "VLAN" com interface física, ID (1–4094), nome opcional (padrão interface.ID), e IP DHCP/estático (CIDR/gateway/DNS). No Linux cria via `nmcli con add type vlan` + `con mod` + `con up`; no Windows mostra orientação (netsh não cria VLAN). Mantém o padrão preview/apply (nunca aplica sem confirmação). Model `VlanRequest`, método `ConfigureVlanAsync`.
+
+---
+### ⚙️ v1.0.2 — Configurações, tela inicial e atalhos do navegador
+- [x] **Definir tela inicial pelo menu:** botão direito em qualquer item do menu lateral → "Definir como tela inicial" (ex.: abrir direto nas Câmeras). Persiste em `StartupPageKey`.
+- [x] **Menu de Configurações:** novo módulo com tela inicial, tema (Dark/Light), módulos visíveis (ocultar recursos não usados — "Configurações" nunca some), página inicial do navegador embutido ("router" = gateway da rede, ou uma URL leve) e range padrão do scan de portas. Persiste em `AppSettings`.
+- [x] **Módulos habilitáveis:** `EnabledModules` filtra o menu lateral; aplicado ao salvar e no startup.
+- [x] **Range de portas configurável:** o scanner usa `PortScanStart/End` das preferências como range padrão (ou "todas as portas"); a aba Portas mostra os campos De/até.
+- [x] **Navegador — seletor de roteadores:** a barra de endereço ganhou um combo com os roteadores/dispositivos web descobertos (via `IWebDeviceRegistry`, alimentado pelo painel); escolher um navega direto para ele. Útil para alternar entre roteadores.
+- [x] **Chave estável por módulo (`ViewModelBase.Key`)** para persistir preferências sem depender do título.

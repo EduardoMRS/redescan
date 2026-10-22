@@ -1,0 +1,96 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="640"
+             x:Class="RedeScan.UI.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+    <ScrollViewer>
+        <StackPanel Spacing="4" MaxWidth="720" HorizontalAlignment="Left">
+
+            <!-- Tela inicial + tema -->
+            <TextBlock Text="Aparência e início" Classes="h2" />
+            <Border Classes="card">
+                <StackPanel Spacing="10">
+                    <Grid ColumnDefinitions="150,*">
+                        <TextBlock Grid.Column="0" Text="Tela inicial" VerticalAlignment="Center" />
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding Modules}"
+                                  SelectedItem="{Binding StartupModule}"
+                                  HorizontalAlignment="Stretch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ModuleToggle">
+                                    <TextBlock Text="{Binding Display}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </Grid>
+                    <Grid ColumnDefinitions="150,*">
+                        <TextBlock Grid.Column="0" Text="Tema" VerticalAlignment="Center" />
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding Themes}"
+                                  SelectedItem="{Binding Theme}" HorizontalAlignment="Stretch" />
+                    </Grid>
+                    <TextBlock Classes="subtle" FontSize="11" TextWrapping="Wrap"
+                               Text="Dica: você também pode clicar com o botão direito em um item do menu lateral e escolher 'Definir como tela inicial'." />
+                </StackPanel>
+            </Border>
+
+            <!-- Módulos visíveis -->
+            <TextBlock Text="Módulos visíveis" Classes="h2" />
+            <Border Classes="card">
+                <StackPanel Spacing="4">
+                    <TextBlock Classes="subtle" TextWrapping="Wrap" Margin="0,0,0,6"
+                               Text="Desmarque os recursos que você não usa para deixar o menu mais enxuto. 'Configurações' permanece sempre acessível." />
+                    <ItemsControl ItemsSource="{Binding Modules}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="2" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ModuleToggle">
+                                <CheckBox Margin="0,2" IsChecked="{Binding IsEnabled}"
+                                          Content="{Binding Display}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Navegador embutido -->
+            <TextBlock Text="Navegador embutido" Classes="h2" />
+            <Border Classes="card">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Página inicial" />
+                    <TextBox Text="{Binding BrowserHome}"
+                             Watermark="router (gateway da rede) ou uma URL, ex.: https://fast.com" />
+                    <TextBlock Classes="subtle" FontSize="11" TextWrapping="Wrap"
+                               Text="Use 'router' para abrir direto no gateway da rede detectada, ou informe uma URL leve de sua preferência." />
+                </StackPanel>
+            </Border>
+
+            <!-- Scan de portas -->
+            <TextBlock Text="Scan de portas (range padrão)" Classes="h2" />
+            <Border Classes="card">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="Porta inicial" Classes="subtle" />
+                        <NumericUpDown Value="{Binding PortScanStart}" Minimum="1" Maximum="65535"
+                                       Increment="1" Width="140" FormatString="0" />
+                    </StackPanel>
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="Porta final" Classes="subtle" />
+                        <NumericUpDown Value="{Binding PortScanEnd}" Minimum="1" Maximum="65535"
+                                       Increment="1" Width="140" FormatString="0" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Button Content="💾 Salvar preferências" Classes="accent"
+                    Command="{Binding SaveCommand}" HorizontalAlignment="Left" Margin="0,4,0,0" />
+
+            <TextBlock Classes="subtle" Text="{Binding Status}" TextWrapping="Wrap" Margin="0,8,0,0" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

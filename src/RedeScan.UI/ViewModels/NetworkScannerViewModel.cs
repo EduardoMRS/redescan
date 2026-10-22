@@ -22,6 +22,7 @@ public partial class NetworkScannerViewModel : ViewModelBase
     private readonly IWakeOnLanService _wol;
     private readonly IRemoteAccessService _remote;
     private readonly ISystemBrowserLauncher _systemBrowser;
+    private readonly IConfigurationService _config;
     private readonly IServiceProvider _services;
     private CancellationTokenSource? _scanCts;
     private CancellationTokenSource? _portCts;
@@ -49,10 +50,18 @@ public partial class NetworkScannerViewModel : ViewModelBase
 
     /// <summary>
     /// Quando ligado, o scan de portas varre TODAS as portas TCP (1–65535) em
-    /// vez de apenas as portas de serviços conhecidos.
+    /// vez do range configurado.
     /// </summary>
     [ObservableProperty]
     private bool _scanAllPorts;
+
+    /// <summary>Início do range de portas (padrão vindo das preferências).</summary>
+    [ObservableProperty]
+    private int _portRangeStart = 1;
+
+    /// <summary>Fim do range de portas (padrão vindo das preferências).</summary>
+    [ObservableProperty]
+    private int _portRangeEnd = 1024;
 
     [ObservableProperty]
     private string _status = "Pronto.";
@@ -75,6 +84,7 @@ public partial class NetworkScannerViewModel : ViewModelBase
         IWakeOnLanService wol,
         IRemoteAccessService remote,
         ISystemBrowserLauncher systemBrowser,
+        IConfigurationService config,
         IServiceProvider services)
     {
         _scanner = scanner;
@@ -85,10 +95,24 @@ public partial class NetworkScannerViewModel : ViewModelBase
         _wol = wol;
         _remote = remote;
         _systemBrowser = systemBrowser;
+        _config = config;
         _services = services;
         IsWinboxAvailable = _remote.IsWinboxAvailable;
         // O serviço espera o prefixo terminado em ponto (ex.: "192.168.0.").
         SubnetPrefix = _networkInterface.GetSubnetPrefix() ?? "192.168.0.";
+
+        // Range de portas padrão vem das preferências do usuário.
+        try
+        {
+            var s = _config.LoadSettingsAsync().GetAwaiter().GetResult();
+            PortRangeStart = s.PortScanStart;
+            PortRangeEnd = s.PortScanEnd;
+        }
+        catch
+        {
+            PortRangeStart = 1;
+            PortRangeEnd = 1024;
+        }
     }
 
     /// <summary>Garante o prefixo no formato "a.b.c." aceito pelo scanner.</summary>
@@ -166,8 +190,8 @@ public partial class NetworkScannerViewModel : ViewModelBase
 
         // Modo completo: varre TODAS as portas TCP (1–65535). Mais lento e mais
         // "barulhento" na rede, mas não deixa nenhuma porta de fora. Usa timeout
-        // curto e concorrência alta para compensar o volume. Modo rápido: só as
-        // portas de serviços conhecidos.
+        // curto e concorrência alta para compensar o volume. Modo padrão: o range
+        // configurado nas preferências (ex.: 1–1024).
         IEnumerable<int> portsToScan;
         int timeoutMs;
         int maxConcurrency;
@@ -180,10 +204,12 @@ public partial class NetworkScannerViewModel : ViewModelBase
         }
         else
         {
-            portsToScan = _portScanner.KnownPorts.Keys;
-            timeoutMs = 500;
-            maxConcurrency = 20;
-            Status = $"Varrendo portas conhecidas de {ip}…";
+            var start = Math.Clamp(PortRangeStart, 1, 65535);
+            var end = Math.Clamp(PortRangeEnd, start, 65535);
+            portsToScan = Enumerable.Range(start, end - start + 1);
+            timeoutMs = 400;
+            maxConcurrency = 200;
+            Status = $"Varrendo portas {start}–{end} de {ip}…";
         }
 
         var progress = new Progress<PortScanResult>(result =>

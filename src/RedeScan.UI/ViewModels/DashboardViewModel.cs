@@ -20,6 +20,7 @@ public partial class DashboardViewModel : ViewModelBase, IDisposable
     private readonly IWebDeviceScanner _webScanner;
     private readonly IUpdateService _updateService;
     private readonly ISystemBrowserLauncher _systemBrowser;
+    private readonly IWebDeviceRegistry _webRegistry;
     private readonly IServiceProvider _services;
 
     // Rota do manifesto de atualização no servidor de releases.
@@ -59,12 +60,14 @@ public partial class DashboardViewModel : ViewModelBase, IDisposable
         IWebDeviceScanner webScanner,
         IUpdateService updateService,
         ISystemBrowserLauncher systemBrowser,
+        IWebDeviceRegistry webRegistry,
         IServiceProvider services)
     {
         _networkInterface = networkInterface;
         _webScanner = webScanner;
         _updateService = updateService;
         _systemBrowser = systemBrowser;
+        _webRegistry = webRegistry;
         _services = services;
 
         WebDevices.CollectionChanged += (_, _) => HasNoWebDevices = WebDevices.Count == 0;
@@ -191,6 +194,7 @@ public partial class DashboardViewModel : ViewModelBase, IDisposable
                     WebDevices.Add(dev);
                 }
             });
+            _webRegistry.AddOrUpdate(dev);
         });
 
         try
@@ -228,6 +232,7 @@ public partial class DashboardViewModel : ViewModelBase, IDisposable
                     {
                         WebDevices.Insert(0, r);
                     }
+                    _webRegistry.AddOrUpdate(r);
                 }
             });
 

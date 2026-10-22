@@ -9,6 +9,31 @@ public class AppSettings
     public int MaxScanConcurrency { get; set; } = 40;
     public string Theme { get; set; } = "Dark";
 
+    // ------------------------------------------------- Preferências de UI
+    /// <summary>
+    /// Chave do módulo que deve abrir ao iniciar o app (ex.: "dashboard",
+    /// "cameras"). Vazio = primeiro módulo ativo.
+    /// </summary>
+    public string StartupPageKey { get; set; } = "dashboard";
+
+    /// <summary>
+    /// Chaves dos módulos habilitados (exibidos no menu). Quando vazio, todos os
+    /// módulos ficam visíveis. Permite esconder recursos que não serão usados.
+    /// </summary>
+    public List<string> EnabledModules { get; set; } = new();
+
+    /// <summary>
+    /// Página inicial do navegador embutido. Aceita uma URL ou o valor especial
+    /// "router" para usar o gateway padrão da rede detectada.
+    /// </summary>
+    public string BrowserHomeUrl { get; set; } = "router";
+
+    /// <summary>Porta inicial padrão do scan de portas.</summary>
+    public int PortScanStart { get; set; } = 1;
+
+    /// <summary>Porta final padrão do scan de portas.</summary>
+    public int PortScanEnd { get; set; } = 1024;
+
     public static AppSettings CreateDefault()
     {
         return new AppSettings

@@ -47,6 +47,13 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="vm:ViewModelBase">
                             <StackPanel Orientation="Horizontal" Spacing="12">
+                                <StackPanel.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="🏠 Definir como tela inicial"
+                                                  Command="{Binding $parent[ListBox].((vm:MainWindowViewModel)DataContext).SetAsStartupCommand}"
+                                                  CommandParameter="{Binding}" />
+                                    </ContextMenu>
+                                </StackPanel.ContextMenu>
                                 <TextBlock Text="{Binding Icon}" FontSize="16" Width="22"
                                            HorizontalAlignment="Center" />
                                 <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
