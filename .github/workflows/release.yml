@@ -125,23 +125,26 @@ jobs:
     name: Full — Linux (Fedora)
     runs-on: ubuntu-latest
     container: fedora:40
+    # Não bloqueia a release: se o Fedora falhar, os demais pacotes saem mesmo assim.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-      # Dependências do SO: libvlc + utilitários. O .NET 8 vem do dnf; se não
-      # estiver disponível no repo, cai no script oficial da Microsoft.
+      # libvlc + utilitários via dnf. O SDK do .NET vem SEMPRE do script oficial
+      # da Microsoft: o pacote dotnet-sdk-8.0 do Fedora é da banda 8.0.1xx, que
+      # não satisfaz o global.json (8.0.4xx). O script respeita o global.json.
       - name: Instalar dependências (dnf)
+        run: dnf -y install vlc-devel vlc-libs zip findutils libicu krb5-libs tar which curl
+      - name: Instalar .NET 8 SDK (script oficial, banda 8.0.4xx)
         run: |
-          dnf -y install vlc-devel vlc-libs zip findutils libicu krb5-libs tar which
-          if ! dnf -y install dotnet-sdk-8.0; then
-            echo "dotnet-sdk-8.0 não disponível no dnf; usando o script oficial."
-            curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
-            bash /tmp/dotnet-install.sh --channel 8.0 --install-dir /usr/lib/dotnet
-            ln -sf /usr/lib/dotnet/dotnet /usr/bin/dotnet
-          fi
+          curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
+          bash /tmp/dotnet-install.sh --channel 8.0 --install-dir /usr/lib/dotnet
+          ln -sf /usr/lib/dotnet/dotnet /usr/bin/dotnet
           dotnet --info
       - name: Publicar pacote Full (CEF + LibVLC)
+        env:
+          DOTNET_ROOT: /usr/lib/dotnet
         run: >
-          dotnet publish src/RedeScan.Desktop/RedeScan.Desktop.csproj
+          /usr/lib/dotnet/dotnet publish src/RedeScan.Desktop/RedeScan.Desktop.csproj
           --configuration Release --runtime linux-x64 --self-contained true
           -p:EnableNativeMedia=true -p:PublishSingleFile=false
           -p:DebugType=none -p:DebugSymbols=false
@@ -160,6 +163,8 @@ jobs:
   android-apk:
     name: APK (Android)
     runs-on: ubuntu-latest
+    # Não bloqueia a release: se o workload android falhar (rede), o resto sai.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v5
@@ -169,8 +174,20 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+      # O download dos packs do workload pode falhar por rede transitória no
+      # runner; tenta até 3 vezes antes de desistir.
       - name: Instalar workload android (.NET 8)
-        run: dotnet workload install android --skip-manifest-update
+        run: |
+          for i in 1 2 3; do
+            echo "Tentativa $i de instalar o workload android…"
+            if dotnet workload install android --skip-manifest-update --disable-parallel; then
+              exit 0
+            fi
+            echo "Falhou (provável rede). Aguardando antes de tentar de novo…"
+            sleep 15
+          done
+          echo "Workload android falhou após 3 tentativas." >&2
+          exit 1
       - name: Publicar APK
         run: dotnet publish src/RedeScan.Android/RedeScan.Android.csproj --configuration Release --output ./dist/android
       - name: Renomear APK

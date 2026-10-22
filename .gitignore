@@ -457,6 +457,8 @@ context/
 /publish/
 # Saída de empacotamento de mídia nativa (scripts/package-native.sh)
 /dist/
+# Saída dos pacotes Full no workflow de release
+/full/
 
 # Certificados e chaves de assinatura — NÃO versionar (projeto open source)
 *.pfx
