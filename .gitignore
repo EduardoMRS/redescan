@@ -475,3 +475,7 @@ secrets.json
 
 # Configuração local do RedeScan gerada em runtime (contém hosts/câmeras do usuário)
 config.json
+
+# Cache de build do Avalonia
+.avalonia-build-tasks/
+**/.avalonia-build-tasks/
