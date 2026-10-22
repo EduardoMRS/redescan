@@ -1,0 +1,64 @@
+name: CI (validação)
+
+# Validação automática e barata em cada push/PR: restaura dependências,
+# compila (valida a semântica do código) e roda os testes. NÃO gera binários
+# de release — isso fica no workflow de deploy, acionado manualmente/por tag.
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validar dependências, compilação e testes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar SDK do .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # 1) Dependências: 'restore' falha se algum pacote não resolver.
+      - name: Restaurar dependências
+        run: dotnet restore RedeScan.sln
+
+      # 2) Semântica: compila em Release tratando avisos como erro.
+      - name: Compilar (Release, avisos como erro)
+        run: dotnet build RedeScan.sln --configuration Release --no-restore -warnaserror
+
+      # 3) Testes automatizados.
+      - name: Executar testes
+        run: dotnet test RedeScan.sln --configuration Release --no-build --verbosity normal
+
+  # Validação (não bloqueante) de que a variante com mídia nativa compila,
+  # sem gerar o pacote pesado. Mantém a build Full "honesta" a cada mudança.
+  validate-native-media:
+    name: Validar compilação com mídia nativa
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar SDK do .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Instalar libvlc
+        run: sudo apt-get update && sudo apt-get install -y libvlc-dev vlc
+
+      - name: Compilar com EnableNativeMedia=true
+        run: >
+          dotnet build src/RedeScan.Desktop/RedeScan.Desktop.csproj
+          --configuration Release
+          -p:EnableNativeMedia=true

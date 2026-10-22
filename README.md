@@ -138,6 +138,19 @@ nesse arquivo local** e injetadas na URL só em tempo de execução
 
 ---
 
+## 🔁 Integração contínua e releases
+
+Dois workflows separados:
+
+- **CI (validação)** — roda automaticamente em push/PR: restaura dependências, compila
+  (avisos como erro) e roda os testes. Não gera binários.
+- **Release (deploy manual)** — acionado por você (botão *Run workflow*) ou por uma tag
+  `v*`. Gera as variantes **portátil leve** (`.AppImage` Linux, `.exe` Windows, `.apk`
+  Android) e **Full** com navegador + vídeo (`RedeScan-Full-Windows`, `-Linux-Ubuntu`,
+  `-Linux-Fedora`), e publica a GitHub Release. Veja [RELEASING.md](RELEASING.md).
+
+---
+
 ## 🧪 Testes
 
 ```bash

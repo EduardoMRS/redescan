@@ -156,6 +156,7 @@ RedeScan/
 - [x] **Scan aprofundado (`HostInspector`):** banner grabbing para identificar o serviço real (não só a porta), estimativa de SO por TTL+banners, nome (DNS), MAC e fabricante (OUI).
 - [x] **Wake-on-LAN (`WakeOnLanService`):** envia magic packet UDP para ligar dispositivos pelo MAC.
 - [ ] **Uptime remoto:** inviável sem acesso ao dispositivo (SNMP/SSH com credencial) — deixado de fora para não exibir dado incorreto.
-- [ ] **Deploy manual + validação automática** e **Full em todas as plataformas** (Linux Ubuntu/Fedora, Windows, Android) — próximo passo desta fase.
+- [x] **Deploy manual + validação automática:** dois workflows — `ci.yml` (push/PR: deps + compilação com `-warnaserror` + testes) e `release.yml` (manual/tag: builda tudo e publica a Release).
+- [x] **Full em todas as plataformas:** Windows, Linux Ubuntu (apt) e Linux Fedora (container dnf) com CEF+LibVLC; portátil (AppImage/exe) + APK Android. *Android usa "abrir no sistema" para web (WebView nativo embutido = item futuro).*
 
 > **Honestidade sobre limites:** SO é *estimativa* (TTL/banner), não fingerprinting real (exigiria root/libpcap). Nome depende de o dispositivo responder (DNS/NetBIOS). "Full para Android" usará o WebView nativo do Android (o CEF é desktop-only).

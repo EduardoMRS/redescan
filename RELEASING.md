@@ -1,36 +1,31 @@
 # Como publicar uma Release
 
-Este projeto usa GitHub Actions para publicar os binários automaticamente. Você
-nunca precisa subir arquivos à mão — tudo acontece a partir de uma **tag**.
+O projeto tem **dois workflows** separados no GitHub Actions:
 
-## Entendendo os dois modos do CI
-
-| Gatilho | O que acontece | Onde ficam os binários |
+| Workflow | Quando roda | O que faz |
 |---|---|---|
-| `push` na `main` ou `pull_request` | compila, roda testes e sobe os binários como *artifacts* da execução | aba **Actions** → a execução → seção *Artifacts* (temporários) |
-| `push` de uma **tag `v*`** (ex.: `v1.0.0`) | tudo acima **+ cria uma GitHub Release** | aba **Releases** do repositório (permanente, versionado) |
+| **CI (validação)** — `ci.yml` | automático em `push`/`pull_request` na `main` | só valida: restaura dependências, compila (avisos como erro) e roda os testes. Não gera binários. |
+| **Release (deploy manual)** — `release.yml` | **manual** (botão *Run workflow*) ou ao enviar uma **tag `v*`** | builda todas as variantes e publica a **GitHub Release**. |
 
-- **Artifacts** servem para baixar e testar builds do dia a dia. Expiram.
-- **Release** é a publicação de verdade: página versionada, com notas de versão e os
-  arquivos para download público.
+Ou seja: o dia a dia (push/PR) é rápido e barato — só checa se o código compila e
+passa nos testes. O build pesado (binários, pacotes Full ~400 MB) só acontece quando
+**você** decide publicar.
 
-## Publicando a v1.0.0
-
-Com tudo já na `main`:
+## Publicar — opção 1: por tag
 
 ```bash
-# 1. Garanta que está na main atualizada
-git checkout main
-git pull
-
-# 2. Crie a tag anotada
+git checkout main && git pull
 git tag -a v1.0.0 -m "RedeScan v1.0.0"
-
-# 3. Envie a tag (isto dispara o job de release)
-git push origin v1.0.0
+git push origin v1.0.0          # dispara o deploy e cria a Release v1.0.0
 ```
 
-Em alguns minutos, a aba **Releases** terá a `v1.0.0` com **duas variantes**:
+## Publicar — opção 2: manual (sem tag)
+
+Na aba **Actions** → workflow **Release (deploy manual)** → **Run workflow**. Você pode
+informar a versão (ex.: `v1.0.0`); se deixar em branco, sai uma **pré-release de teste**
+com nome automático.
+
+## O que entra na Release
 
 ### Portátil (leve) — recomendada para a maioria
 Um único arquivo, sem navegador embutido (usa "abrir no sistema" para web):
@@ -38,38 +33,33 @@ Um único arquivo, sem navegador embutido (usa "abrir no sistema" para web):
 - `RedeScan-Linux-x86_64.AppImage` — portátil universal do Linux
   (`chmod +x *.AppImage && ./RedeScan-Linux-x86_64.AppImage`)
 - `RedeScan-Windows-x64.exe` — executável único para Windows (não precisa instalar)
-- `RedeScan-Android.apk` — APK de teste (debug-signed)
+- `RedeScan-Android.apk` — APK (debug-signed)
 
-### Full (com motor web) — maior
-Pacote em `.zip` com o **navegador integrado (CEF)** e o **vídeo RTSP (LibVLC)**
-embutidos. É um pacote de vários arquivos (o CEF exige isso), ~400 MB:
+### Full (com motor web + vídeo) — maior (~400 MB)
+Pacote `.zip` com **navegador CEF** e **vídeo LibVLC** embutidos (vários arquivos):
 
-- `RedeScan-Full-Linux-x64.zip`
 - `RedeScan-Full-Windows-x64.zip`
+- `RedeScan-Full-Linux-Ubuntu-x64.zip`  (base Debian/Ubuntu)
+- `RedeScan-Full-Linux-Fedora-x64.zip`  (base Fedora/RHEL)
 
-Descompacte e rode o executável `RedeScan`/`RedeScan.exe` de dentro da pasta.
+Descompacte e rode o `RedeScan`/`RedeScan.exe` de dentro da pasta.
 
-As notas de versão são geradas automaticamente a partir dos commits/PRs.
-
-> **Por que duas variantes?** O motor web (Chromium/CEF) pesa centenas de MB e
-> precisa de arquivos soltos — não cabe no formato "um arquivo só". Quem quer um
-> download pequeno e portátil usa a variante leve; quem precisa do navegador
-> embutido usa a Full. (Os *artifacts* por execução do CI sempre chegam em `.zip`
-> porque o GitHub Actions embrulha todo artifact; os assets da Release são os
-> arquivos diretos.)
+> **Por que duas variantes de Linux Full?** O libvlc é dependência do sistema e difere
+> entre famílias (apt no Ubuntu, dnf no Fedora). Geramos um pacote em cada base para
+> maximizar a compatibilidade do vídeo RTSP.
 
 ## Corrigindo uma tag errada
 
 ```bash
-git tag -d v1.0.0                # apaga localmente
-git push origin :refs/tags/v1.0.0 # apaga no remoto
-# recrie e reenvie conforme acima
+git tag -d v1.0.0
+git push origin :refs/tags/v1.0.0
 ```
 
-## Observações
+## Observações honestas
 
-- O APK é assinado com a **chave de debug** (adequado para testes). Para publicar na
-  Play Store seria necessária uma *keystore* própria (mantida fora do repositório, em
-  GitHub Secrets).
-- A build de **mídia nativa** (CEF + LibVLC) não entra na Release automática por ser
-  grande e opcional; gere-a sob demanda com `scripts/package-native.sh`.
+- O **APK** é assinado com a chave de **debug** (para testes). Publicar na Play Store
+  exigiria uma *keystore* própria (guardada em GitHub Secrets, fora do repo).
+- No **Android**, o navegador integrado usa "abrir no sistema"; o WebView nativo
+  embutido no APK é um item futuro (o CEF é desktop-only).
+- A variante **Full** não é single-file/AppImage porque o CEF precisa de arquivos
+  soltos (libcef, locales, processo auxiliar).

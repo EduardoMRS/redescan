@@ -1,0 +1,224 @@
+name: Release (deploy manual)
+
+# Deploy acionado MANUALMENTE (workflow_dispatch) ou ao enviar uma tag v*.
+# Gera as variantes Portátil (leve) e Full (com motor web + vídeo) para
+# Windows, Linux (Ubuntu e Fedora) e o APK Android, e publica a GitHub Release.
+#
+# A validação (dependências/compilação/testes) fica no workflow "CI (validação)".
+
+on:
+  push:
+    tags: [ "v*" ]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag/versão da release (ex.: v1.0.0). Se vazio, publica como pré-release de teste."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  # ===========================================================================
+  # PORTÁTIL (leve): executável único por plataforma, sem motor web embutido.
+  # ===========================================================================
+  portable-desktop:
+    name: Portátil (${{ matrix.target.rid }})
+    runs-on: ${{ matrix.target.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - os: ubuntu-latest
+            rid: linux-x64
+            artifact_name: RedeScan-Portable-Linux
+          - os: windows-latest
+            rid: win-x64
+            artifact_name: RedeScan-Portable-Windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publicar executável self-contained (sem .pdb)
+        run: >
+          dotnet publish src/RedeScan.Desktop/RedeScan.Desktop.csproj
+          --configuration Release
+          --runtime ${{ matrix.target.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:DebugType=none
+          -p:DebugSymbols=false
+          --output ./publish/${{ matrix.target.rid }}
+
+      - name: Preparar binário (Windows)
+        if: runner.os == 'Windows'
+        run: Copy-Item ./publish/${{ matrix.target.rid }}/RedeScan.exe ./RedeScan-Windows-x64.exe
+
+      - name: Gerar AppImage (Linux)
+        if: runner.os == 'Linux'
+        run: bash scripts/make-appimage.sh ./publish/${{ matrix.target.rid }}/RedeScan RedeScan-Linux-x86_64.AppImage
+
+      - name: Armazenar artefato portátil
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target.artifact_name }}
+          path: |
+            ./RedeScan-Windows-x64.exe
+            ./RedeScan-Linux-x86_64.AppImage
+          if-no-files-found: ignore
+
+  # ===========================================================================
+  # FULL (motor web CEF + vídeo LibVLC): pacote de vários arquivos, por isso .zip.
+  # Windows e Ubuntu nos runners nativos; Fedora dentro de um container.
+  # ===========================================================================
+  full-windows:
+    name: Full — Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Publicar pacote Full (CEF + LibVLC)
+        run: >
+          dotnet publish src/RedeScan.Desktop/RedeScan.Desktop.csproj
+          --configuration Release --runtime win-x64 --self-contained true
+          -p:EnableNativeMedia=true -p:PublishSingleFile=false
+          -p:DebugType=none -p:DebugSymbols=false
+          --output ./full/win-x64
+      - name: Compactar
+        run: Compress-Archive -Path ./full/win-x64/* -DestinationPath ./RedeScan-Full-Windows-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RedeScan-Full-Windows
+          path: ./RedeScan-Full-Windows-x64.zip
+
+  full-ubuntu:
+    name: Full — Linux (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Instalar libvlc (apt)
+        run: sudo apt-get update && sudo apt-get install -y libvlc-dev vlc zip
+      - name: Publicar pacote Full (CEF + LibVLC)
+        run: >
+          dotnet publish src/RedeScan.Desktop/RedeScan.Desktop.csproj
+          --configuration Release --runtime linux-x64 --self-contained true
+          -p:EnableNativeMedia=true -p:PublishSingleFile=false
+          -p:DebugType=none -p:DebugSymbols=false
+          --output ./full/linux-x64
+      - name: Compactar
+        run: cd ./full/linux-x64 && zip -r "../../RedeScan-Full-Linux-Ubuntu-x64.zip" .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RedeScan-Full-Linux-Ubuntu
+          path: ./RedeScan-Full-Linux-Ubuntu-x64.zip
+
+  full-fedora:
+    name: Full — Linux (Fedora)
+    runs-on: ubuntu-latest
+    container: fedora:40
+    steps:
+      - uses: actions/checkout@v4
+      # Dependências do SO: libvlc + utilitários. O .NET 8 vem do dnf; se não
+      # estiver disponível no repo, cai no script oficial da Microsoft.
+      - name: Instalar dependências (dnf)
+        run: |
+          dnf -y install vlc-devel vlc-libs zip findutils libicu krb5-libs tar which
+          if ! dnf -y install dotnet-sdk-8.0; then
+            echo "dotnet-sdk-8.0 não disponível no dnf; usando o script oficial."
+            curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
+            bash /tmp/dotnet-install.sh --channel 8.0 --install-dir /usr/lib/dotnet
+            ln -sf /usr/lib/dotnet/dotnet /usr/bin/dotnet
+          fi
+          dotnet --info
+      - name: Publicar pacote Full (CEF + LibVLC)
+        run: >
+          dotnet publish src/RedeScan.Desktop/RedeScan.Desktop.csproj
+          --configuration Release --runtime linux-x64 --self-contained true
+          -p:EnableNativeMedia=true -p:PublishSingleFile=false
+          -p:DebugType=none -p:DebugSymbols=false
+          --output ./full/fedora-x64
+      - name: Compactar
+        run: cd ./full/fedora-x64 && zip -r "../../RedeScan-Full-Linux-Fedora-x64.zip" .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RedeScan-Full-Linux-Fedora
+          path: ./RedeScan-Full-Linux-Fedora-x64.zip
+
+  # ===========================================================================
+  # ANDROID: APK (debug-signed). O navegador no Android usa "abrir no sistema"
+  # (o WebView nativo embutido é item futuro; o CEF é desktop-only).
+  # ===========================================================================
+  android-apk:
+    name: APK (Android)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Instalar workload android (.NET 8)
+        run: dotnet workload install android --skip-manifest-update
+      - name: Publicar APK
+        run: dotnet publish src/RedeScan.Android/RedeScan.Android.csproj --configuration Release --output ./dist/android
+      - name: Renomear APK
+        run: cp ./dist/android/*-Signed.apk ./RedeScan-Android.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RedeScan-Android-APK
+          path: ./RedeScan-Android.apk
+
+  # ===========================================================================
+  # PUBLICAÇÃO: junta todos os artefatos e cria a GitHub Release.
+  # Em tag v*, usa a tag. Em disparo manual, usa o input (ou pré-release de teste).
+  # ===========================================================================
+  publish:
+    name: Publicar GitHub Release
+    needs: [ portable-desktop, full-windows, full-ubuntu, full-fedora, android-apk ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar todos os artefatos
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Listar artefatos
+        run: find ./artifacts -type f
+
+      - name: Definir tag/pré-release
+        id: ver
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ github.event.inputs.tag }}" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=manual-$(date +%Y%m%d-%H%M%S)" >> "$GITHUB_OUTPUT"
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Criar/atualizar a Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          prerelease: ${{ steps.ver.outputs.prerelease }}
+          generate_release_notes: true
+          files: |
+            ./artifacts/**/*.exe
+            ./artifacts/**/*.AppImage
+            ./artifacts/**/*.apk
+            ./artifacts/**/*.zip
