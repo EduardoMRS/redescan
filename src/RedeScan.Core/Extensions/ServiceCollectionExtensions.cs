@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IRtspListImporter, RtspListImporter>();
         services.AddSingleton<IRemoteAccessService, RemoteAccessService>();
         services.AddSingleton<ISshTerminalFactory, SshTerminalFactory>();
+        services.AddSingleton<ITftpServer, TftpServer>();
         services.AddSingleton<IUpdateService>(_ => new UpdateService());
         services.AddSingleton<IPortScannerService, PortScannerService>();
         services.AddSingleton<ILoadTestService, LoadTestService>();

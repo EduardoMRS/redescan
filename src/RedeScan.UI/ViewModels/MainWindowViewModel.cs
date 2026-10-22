@@ -34,7 +34,8 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator
         ShortcutsViewModel shortcuts,
         BrowserViewModel browser,
         NetworkConfigViewModel networkConfig,
-        TerminalViewModel terminal)
+        TerminalViewModel terminal,
+        TftpViewModel tftp)
     {
         _browser = browser;
         _terminal = terminal;
@@ -49,7 +50,8 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator
             shortcuts,
             browser,
             networkConfig,
-            terminal
+            terminal,
+            tftp
         };
 
         _currentPage = dashboard;

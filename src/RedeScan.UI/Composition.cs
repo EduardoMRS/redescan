@@ -32,6 +32,7 @@ public static class Composition
         services.AddSingleton<BrowserViewModel>();
         services.AddSingleton<NetworkConfigViewModel>();
         services.AddSingleton<TerminalViewModel>();
+        services.AddSingleton<TftpViewModel>();
 
         // IAppNavigator é o próprio MainWindowViewModel (resolvido sob demanda
         // para evitar ciclo com os ViewModels que o consomem).
