@@ -133,14 +133,17 @@ RedeScan/
 - [x] Raiz de composição compartilhada (`Composition.BuildServiceProvider`) usada por Desktop e Android.
 - [x] `App` trata tanto `IClassicDesktopStyleApplicationLifetime` quanto `ISingleViewApplicationLifetime`.
 - [x] Projeto `src/RedeScan.Android` (`net8.0-android`, Avalonia.Android 11.2.3, `MainActivity`, manifest com permissões de rede/Wi-Fi, ícone e tema).
-- [x] APK de teste gerado e validado (`com.redescan.app-Signed.apk`, minSdk 21, ~63 MB).
+- [x] APK de teste gerado e validado (`com.redescan.app-Signed.apk`, minSdk 21, ~45 MB após restringir RIDs a arm64/x64).
 - [x] Script `scripts/build-android.sh` e job de CI `build-android-apk` (fora da `RedeScan.sln` para não exigir o workload android no build principal).
 
 > **Nota Android:** projeto deliberadamente fora da `RedeScan.sln` — `net8.0-android` exige o workload `android`, que o build/CI padrão não tem. Build via `scripts/build-android.sh` (requer JDK 17+, workload android e Android SDK API 34).
 
 ---
 
-### 📌 Fase 4: Limpeza, Testes e Polimento
-- [ ] Validação multiplataforma (execução e testes em Linux e Windows).
-- [ ] Garantir que nenhum arquivo temporário, senha ou token seja persistido no repositório.
-- [ ] Documentação completa no `README.md` com instruções de execução e configuração.
+### 📌 Fase 4: Limpeza, Testes e Polimento — ✅ Concluída
+- [x] Validação multiplataforma: workflow compila/testa e publica Desktop (win/linux) + APK Android; build local verde (0 erros, 11/11 testes).
+- [x] Garantir que nenhum arquivo temporário, senha ou token seja persistido no repositório (varredura confirmou: sem credenciais/segredos; `config.json` fica no perfil do usuário).
+- [x] Documentação completa no `README.md` (visão geral, arquitetura, build/execução por plataforma, configuração) + `LICENSE` (MIT) + `RELEASING.md`.
+- [x] **Deploy real:** workflow publica GitHub Release ao enviar uma tag `v*` (binários desktop zipados + APK anexados).
+
+> **Correção de CI (Disk quota exceeded no Android):** o runner (Ubuntu 26.04) já traz o .NET 10; `dotnet workload install android` pegava o manifesto do .NET 10 e baixava packs net8+net9+net10 até estourar o disco. Resolvido com `global.json` fixando o SDK na banda 8.0.4xx (`rollForward: latestFeature`) + `--skip-manifest-update`, e restringindo os RIDs do Android a `android-arm64;android-x64`.

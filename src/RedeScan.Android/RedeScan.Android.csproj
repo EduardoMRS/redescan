@@ -12,7 +12,11 @@
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
 
-    <!-- APK de teste: sem AOT para compilar mais rápido e simples. -->
+    <!-- APK de teste: foca em arm64 (dispositivos reais) e x64 (emulador),
+         evitando empacotar arm/x86 legados. Reduz tempo de build e tamanho. -->
+    <RuntimeIdentifiers>android-arm64;android-x64</RuntimeIdentifiers>
+
+    <!-- Sem AOT para compilar mais rápido e simples. -->
     <RunAOTCompilation>false</RunAOTCompilation>
     <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
