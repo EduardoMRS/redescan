@@ -110,6 +110,8 @@ jobs:
     name: Full — Windows (.msi)
     needs: version
     runs-on: windows-latest
+    # Não bloqueia a release: se o MSI falhar, o portátil .exe cobre o Windows.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -122,13 +124,17 @@ jobs:
           -p:EnableNativeMedia=true -p:PublishSingleFile=false
           -p:DebugType=none -p:DebugSymbols=false
           --output ./full/win-x64
-      - name: Instalar WiX (gerador de MSI)
-        run: dotnet tool install --global wix
+      # WiX v4: o v7 passou a exigir aceite de EULA (OSMF) interativo, que trava
+      # no CI. A v4 é livre e usa o mesmo schema do nosso redescan.wxs.
+      - name: Instalar WiX v4 (gerador de MSI)
+        run: dotnet tool install --global wix --version 4.0.5
+      - name: Adicionar extensão Util (elemento Files)
+        run: wix extension add -g WixToolset.Util.wixext/4.0.5
       - name: Gerar instalador .msi
         shell: pwsh
         run: |
           $ver = "${{ needs.version.outputs.number }}"
-          wix build scripts/packaging/redescan.wxs `
+          wix build scripts/packaging/redescan.wxs -ext WixToolset.Util.wixext `
             -d PublishDir=full\win-x64 -d Version=$ver `
             -o RedeScan-Full-Windows-x64.msi
       - uses: actions/upload-artifact@v4
