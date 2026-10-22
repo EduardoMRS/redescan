@@ -442,3 +442,7 @@ ehthumbs.db
 Thumbs.db
 [Dd]esktop.ini
 
+# Agent internal context files (not committed)
+context/
+
+
