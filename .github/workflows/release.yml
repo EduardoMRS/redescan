@@ -211,6 +211,31 @@ jobs:
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # Gera o manifesto latest.json com a versão e os links de download desta
+      # release. Os assets ficam em /releases/download/<tag>/<arquivo>.
+      - name: Gerar latest.json
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          VER="$(echo "$TAG" | sed 's/^v//')"
+          BASE="https://github.com/${{ github.repository }}/releases/download/${TAG}"
+          cat > latest.json <<EOF
+          {
+            "version": "${VER}",
+            "published": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "mandatory": false,
+            "notes": "Release ${TAG}",
+            "downloads": {
+              "windows": "${BASE}/RedeScan-Windows-x64.exe",
+              "windowsFull": "${BASE}/RedeScan-Full-Windows-x64.zip",
+              "linux": "${BASE}/RedeScan-Linux-x86_64.AppImage",
+              "linuxFullUbuntu": "${BASE}/RedeScan-Full-Linux-Ubuntu-x64.zip",
+              "linuxFullFedora": "${BASE}/RedeScan-Full-Linux-Fedora-x64.zip",
+              "android": "${BASE}/RedeScan-Android.apk"
+            }
+          }
+          EOF
+          echo "=== latest.json ===" && cat latest.json
+
       - name: Criar/atualizar a Release
         uses: softprops/action-gh-release@v2
         with:
@@ -222,3 +247,12 @@ jobs:
             ./artifacts/**/*.AppImage
             ./artifacts/**/*.apk
             ./artifacts/**/*.zip
+            ./latest.json
+
+      # Disponibiliza o latest.json como artefato do workflow para você subir ao
+      # seu site (https://deveduardomrs.pro/d/redescan/release/latest.json).
+      - name: Publicar latest.json como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: latest-json
+          path: ./latest.json

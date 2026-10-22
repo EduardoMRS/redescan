@@ -63,3 +63,38 @@ git push origin :refs/tags/v1.0.0
   sistema (`android.webkit.WebView`) — não o CEF (que é desktop-only). O APK já traz isso.
 - A variante **Full** não é single-file/AppImage porque o CEF precisa de arquivos
   soltos (libcef, locales, processo auxiliar).
+
+---
+
+## Atualização automática (manifesto `latest.json`)
+
+O app verifica atualizações no início comparando a versão instalada com um
+manifesto remoto:
+
+```
+https://deveduardomrs.pro/d/redescan/release/latest.json
+```
+
+Quando há versão nova, o Painel mostra um aviso com botão **Baixar** (abre o link
+da plataforma no navegador).
+
+### Como o manifesto é gerado
+O workflow de release **gera o `latest.json` automaticamente** com a versão da tag
+e os links dos assets da GitHub Release, e o anexa à release. Você não escreve o
+JSON à mão.
+
+### Mantendo o seu site atualizado
+Para o app apontar para o seu domínio, publique o `latest.json` em
+`https://deveduardomrs.pro/d/redescan/release/`. Duas formas:
+
+1. **Simples:** após cada release, baixe o artefato `latest-json` da execução do
+   workflow (ou o `latest.json` anexado à Release) e suba para a pasta do seu site.
+2. **Automático (futuro):** adicionar um passo no `release.yml` que faz upload do
+   `latest.json` (e, se quiser, dos binários) para o seu servidor via SCP/FTP,
+   usando credenciais guardadas em **GitHub Secrets**. Hoje os links do manifesto
+   apontam para os assets da própria GitHub Release, então basta hospedar o JSON.
+
+### A versão vem de um lugar só
+A versão fica em `Directory.Build.props` (`<RedeScanVersion>`). Atualize-a ao
+publicar e crie a tag correspondente (ex.: `1.1.0` + tag `v1.1.0`). O app lê essa
+mesma versão em runtime para a comparação.

@@ -10,6 +10,18 @@
 
     <ScrollViewer>
         <StackPanel Spacing="4">
+            <!-- Banner de atualização disponível -->
+            <Border Classes="card" IsVisible="{Binding UpdateAvailable}"
+                    Background="#2213A89E" BorderBrush="{DynamicResource RsAccent}">
+                <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                    <TextBlock Grid.Column="0" Text="⬆️" FontSize="18" VerticalAlignment="Center" Margin="0,0,10,0" />
+                    <TextBlock Grid.Column="1" Text="{Binding UpdateMessage}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                    <Button Grid.Column="2" Content="Baixar" Classes="accent" Margin="0,0,6,0"
+                            Command="{Binding DownloadUpdateCommand}" />
+                    <Button Grid.Column="3" Content="✕" Command="{Binding DismissUpdateCommand}" />
+                </Grid>
+            </Border>
+
             <Border Classes="card">
                 <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto">
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Host" Classes="subtle" />

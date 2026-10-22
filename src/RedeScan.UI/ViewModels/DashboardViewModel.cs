@@ -18,8 +18,12 @@ public partial class DashboardViewModel : ViewModelBase, IDisposable
 {
     private readonly INetworkInterfaceService _networkInterface;
     private readonly IWebDeviceScanner _webScanner;
+    private readonly IUpdateService _updateService;
     private readonly ISystemBrowserLauncher _systemBrowser;
     private readonly IServiceProvider _services;
+
+    // Rota do manifesto de atualização no servidor de releases.
+    private const string UpdateManifestUrl = "https://deveduardomrs.pro/d/redescan/release/latest.json";
 
     private Timer? _autoTimer;
     private CancellationTokenSource? _scanCts;
@@ -45,14 +49,21 @@ public partial class DashboardViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty] private bool _hasNoWebDevices = true;
 
+    // ---- Atualização automática ----
+    [ObservableProperty] private bool _updateAvailable;
+    [ObservableProperty] private string _updateMessage = string.Empty;
+    private string? _updateUrl;
+
     public DashboardViewModel(
         INetworkInterfaceService networkInterface,
         IWebDeviceScanner webScanner,
+        IUpdateService updateService,
         ISystemBrowserLauncher systemBrowser,
         IServiceProvider services)
     {
         _networkInterface = networkInterface;
         _webScanner = webScanner;
+        _updateService = updateService;
         _systemBrowser = systemBrowser;
         _services = services;
 
@@ -60,7 +71,44 @@ public partial class DashboardViewModel : ViewModelBase, IDisposable
 
         Refresh();
         StartAutoDiscovery();
+        _ = CheckForUpdatesAsync();
     }
+
+    /// <summary>Verifica, de forma silenciosa, se há uma versão mais recente.</summary>
+    [RelayCommand]
+    private async Task CheckForUpdatesAsync()
+    {
+        var result = await _updateService.CheckAsync(UpdateManifestUrl);
+        if (result.UpdateAvailable)
+        {
+            _updateUrl = result.DownloadUrl;
+            var obrig = result.Mandatory ? " (obrigatória)" : string.Empty;
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                UpdateMessage = $"Nova versão {result.LatestVersion} disponível{obrig}. " +
+                                $"Você está na {result.CurrentVersion}.";
+                UpdateAvailable = true;
+            });
+        }
+        // Falha (sem rede, manifesto ausente) é silenciosa: não incomoda o usuário.
+    }
+
+    /// <summary>Abre o link de download da atualização no navegador do sistema.</summary>
+    [RelayCommand]
+    private void DownloadUpdate()
+    {
+        if (!string.IsNullOrWhiteSpace(_updateUrl))
+        {
+            _systemBrowser.Open(_updateUrl);
+        }
+        else
+        {
+            _systemBrowser.Open("https://deveduardomrs.pro/d/redescan/release/");
+        }
+    }
+
+    [RelayCommand]
+    private void DismissUpdate() => UpdateAvailable = false;
 
     [RelayCommand]
     private void Refresh()

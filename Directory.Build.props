@@ -1,0 +1,14 @@
+<Project>
+  <!--
+    Versão central do RedeScan. Todos os projetos herdam daqui, e o app lê a
+    própria versão em runtime para comparar com o manifesto de atualização.
+    Ao publicar uma nova versão, atualize AQUI (e crie a tag vX.Y.Z).
+  -->
+  <PropertyGroup>
+    <RedeScanVersion>1.0.0</RedeScanVersion>
+    <Version>$(RedeScanVersion)</Version>
+    <AssemblyVersion>$(RedeScanVersion).0</AssemblyVersion>
+    <FileVersion>$(RedeScanVersion).0</FileVersion>
+    <InformationalVersion>$(RedeScanVersion)</InformationalVersion>
+  </PropertyGroup>
+</Project>
