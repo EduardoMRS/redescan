@@ -455,6 +455,8 @@ context/
 
 # Saída de publish self-contained (gerada pelo CI/local)
 /publish/
+# Saída de empacotamento de mídia nativa (scripts/package-native.sh)
+/dist/
 
 # Certificados e chaves de assinatura — NÃO versionar (projeto open source)
 *.pfx

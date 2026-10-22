@@ -27,19 +27,27 @@
         <Grid ColumnDefinitions="*,12,320">
             <!-- Hosts encontrados -->
             <DataGrid Grid.Column="0"
+                      Name="HostsGrid"
                       ItemsSource="{Binding Hosts}"
                       SelectedItem="{Binding SelectedHost}"
                       IsReadOnly="True"
                       GridLinesVisibility="Horizontal"
-                      CanUserReorderColumns="True">
+                      CanUserReorderColumns="True"
+                      DoubleTapped="OnHostDoubleTapped">
                 <DataGrid.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="Escanear portas"
+                        <MenuItem Header="⚡ Escanear portas"
                                   Command="{Binding ScanPortsOfCommand}"
+                                  CommandParameter="{Binding SelectedHost}" />
+                        <MenuItem Header="📍 Ping"
+                                  Command="{Binding PingHostCommand}"
                                   CommandParameter="{Binding SelectedHost}" />
                         <Separator />
                         <MenuItem Header="Abrir HTTP (navegador interno)"
                                   Command="{Binding OpenHttpInternalCommand}"
+                                  CommandParameter="{Binding SelectedHost}" />
+                        <MenuItem Header="Abrir HTTPS (navegador interno)"
+                                  Command="{Binding OpenHttpsInternalCommand}"
                                   CommandParameter="{Binding SelectedHost}" />
                         <MenuItem Header="Abrir HTTPS (navegador do sistema)"
                                   Command="{Binding OpenHttpsSystemCommand}"

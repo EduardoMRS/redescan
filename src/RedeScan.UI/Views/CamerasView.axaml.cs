@@ -50,7 +50,20 @@ public partial class CamerasView : UserControl
     private void OnPlayRequested(RtspCameraConfig camera)
     {
 #if ENABLE_NATIVE_MEDIA
-        PlayNative(camera);
+        try
+        {
+            PlayNative(camera);
+        }
+        catch (Exception ex)
+        {
+            // libvlc ausente/indisponível (comum no Linux sem o pacote vlc):
+            // informa no status em vez de derrubar a aplicação.
+            if (_vm is not null)
+            {
+                _vm.Status = "Não foi possível iniciar o vídeo nativo (libvlc ausente?). " +
+                             "Use 'Abrir no player externo'. Detalhe: " + ex.Message;
+            }
+        }
 #endif
     }
 

@@ -56,13 +56,24 @@ jobs:
           name: ${{ matrix.target.artifact_name }}
           path: ./publish/${{ matrix.target.rid }}
 
-  # Valida (sem publicar) a variante com mídia nativa habilitada — navegador
-  # CEF + vídeo LibVLC — para garantir que a integração opcional continua
-  # compilando. Não bloqueia os artefatos principais.
-  build-native-media:
-    name: Validar build com mídia nativa (EnableNativeMedia)
-    runs-on: ubuntu-latest
+  # Build de distribuição com mídia nativa (navegador CEF + vídeo LibVLC).
+  # NÃO é single-file (o CEF exige arquivos soltos). Publica uma pasta
+  # autocontida por plataforma. Não bloqueia os artefatos principais.
+  package-native-media:
+    name: Empacotar mídia nativa (${{ matrix.target.rid }})
+    runs-on: ${{ matrix.target.os }}
     continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - os: ubuntu-latest
+            rid: linux-x64
+            artifact_name: RedeScan-Native-Linux-x64
+          - os: windows-latest
+            rid: win-x64
+            artifact_name: RedeScan-Native-Windows-x64
+
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
@@ -72,8 +83,23 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Compilar com EnableNativeMedia=true
+      # No Linux, o libvlc é dependência do sistema (não existe no NuGet).
+      - name: Instalar libvlc (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libvlc-dev vlc
+
+      - name: Publicar build de mídia nativa
         run: >
-          dotnet build src/RedeScan.Desktop/RedeScan.Desktop.csproj
+          dotnet publish src/RedeScan.Desktop/RedeScan.Desktop.csproj
           --configuration Release
+          --runtime ${{ matrix.target.rid }}
+          --self-contained true
           -p:EnableNativeMedia=true
+          -p:PublishSingleFile=false
+          --output ./dist/native/${{ matrix.target.rid }}
+
+      - name: Armazenar pacote de mídia nativa
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target.artifact_name }}
+          path: ./dist/native/${{ matrix.target.rid }}

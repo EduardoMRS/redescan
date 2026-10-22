@@ -17,6 +17,7 @@ public partial class NetworkScannerViewModel : ViewModelBase
     private readonly INetworkScannerService _scanner;
     private readonly IPortScannerService _portScanner;
     private readonly INetworkInterfaceService _networkInterface;
+    private readonly IPingService _pingService;
     private readonly ISystemBrowserLauncher _systemBrowser;
     private readonly IServiceProvider _services;
     private CancellationTokenSource? _scanCts;
@@ -51,12 +52,14 @@ public partial class NetworkScannerViewModel : ViewModelBase
         INetworkScannerService scanner,
         IPortScannerService portScanner,
         INetworkInterfaceService networkInterface,
+        IPingService pingService,
         ISystemBrowserLauncher systemBrowser,
         IServiceProvider services)
     {
         _scanner = scanner;
         _portScanner = portScanner;
         _networkInterface = networkInterface;
+        _pingService = pingService;
         _systemBrowser = systemBrowser;
         _services = services;
         // O serviço espera o prefixo terminado em ponto (ex.: "192.168.0.").
@@ -185,6 +188,19 @@ public partial class NetworkScannerViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void OpenHttpsInternal(NetworkHost? host)
+    {
+        var target = host ?? SelectedHost;
+        if (target is null)
+        {
+            return;
+        }
+
+        var navigator = _services.GetService(typeof(IAppNavigator)) as IAppNavigator;
+        navigator?.OpenInInternalBrowser($"https://{target.IpAddress}");
+    }
+
+    [RelayCommand]
     private void OpenHttpsSystem(NetworkHost? host)
     {
         var target = host ?? SelectedHost;
@@ -225,6 +241,29 @@ public partial class NetworkScannerViewModel : ViewModelBase
         if (CanScanPorts)
         {
             await ScanPortsAsync();
+        }
+    }
+
+    [RelayCommand]
+    private async Task PingHost(NetworkHost? host)
+    {
+        var target = host ?? SelectedHost;
+        if (target is null)
+        {
+            return;
+        }
+
+        Status = $"Pingando {target.IpAddress}…";
+        try
+        {
+            var result = await _pingService.PingAsync(target.IpAddress);
+            Status = result.Success
+                ? $"Ping {target.IpAddress}: {result.RoundtripTimeMs} ms (TTL {result.Ttl})."
+                : $"Ping {target.IpAddress}: sem resposta ({result.ErrorMessage}).";
+        }
+        catch (Exception ex)
+        {
+            Status = $"Erro ao pingar {target.IpAddress}: {ex.Message}";
         }
     }
 }

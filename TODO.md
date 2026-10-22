@@ -32,15 +32,15 @@ RedeScan/
 
 ### 📌 Fase 0: Preparação do Ambiente e Inicialização do Projeto
 - [x] Instalar o SDK do **.NET 8** no ambiente de usuário (`~/.dotnet`).
-- [ ] Instalar templates do Avalonia UI (`dotnet new install Avalonia.Templates`).
+- [x] Instalar templates do Avalonia UI (`dotnet new install Avalonia.Templates`).
 - [x] Criar a nova estrutura de solução e projeto Core (`RedeScan.sln`, `src/RedeScan.Core`, `tests/RedeScan.Core.Tests`).
 - [x] Criar projetos de UI e Runner (`RedeScan.UI`, `RedeScan.Desktop`).
 - [ ] Configurar pacotes essenciais:
   - [x] `Avalonia` e `Avalonia.Themes.Fluent` (v11.2.3)
   - [x] `CommunityToolkit.Mvvm` (padrão MVVM com Source Generators)
   - [x] `Avalonia.Controls.DataGrid` + `Avalonia.Fonts.Inter`
-  - [ ] `Avalonia.WebView` (navegador multiplataforma integrado) — *adiado: dependências nativas complicam o publish; por ora usa-se o navegador do sistema no módulo de Atalhos.*
-  - [ ] `LibVLCSharp.Avalonia` + `VideoLAN.LibVLC.*` (reprodução de stream RTSP) — *adiado: grade de câmeras já pronta com placeholder de vídeo; integrar o render depois.*
+  - [x] Navegador integrado via CEF (`WebViewControl-Avalonia`) atrás da flag `EnableNativeMedia`; traz os runtimes do CEF (win/linux/macOS) por NuGet.
+  - [x] `LibVLCSharp.Avalonia` + `VideoLAN.LibVLC.Windows/Mac` (reprodução de stream RTSP) atrás da flag `EnableNativeMedia`; no Linux o `libvlc` é dependência do SO.
   - [x] `Microsoft.Extensions.DependencyInjection` (injeção de dependência)
   - [x] `System.Text.Json` (gerenciamento de perfis e configurações)
 
@@ -99,7 +99,7 @@ RedeScan/
   - [x] `DataGrid` interativo com status online, latência e seleção de host; resultados ao vivo via `IProgress`.
   - [x] Scan de portas conhecidas do host selecionado, cancelável.
   - [x] Lookup de fabricante (OUI) via tabela ARP do SO (`ArpService` + `OuiVendorLookup`), exibido na grade.
-  - [ ] Menu de contexto (botão direito) para ações rápidas — *opcional, pendente.*
+  - [x] Menu de contexto (botão direito) com ações rápidas: escanear portas, ping, abrir HTTP/HTTPS (interno/sistema), copiar IP; duplo-clique escaneia portas.
 - [x] **Módulo 3: Ferramentas de Diagnóstico (Ping, Tracert, Estresse):**
   - [x] Ping contínuo com histórico, média de latência e % de perda; traceroute ao vivo.
   - [x] Painel do Simulador de Carga com controles de segurança e contadores em tempo real.
@@ -119,7 +119,9 @@ RedeScan/
 
 > **Nota:** a solução inteira compila com 0 erros, os 11 testes continuam passando e o `RedeScan.Desktop` publica como executável self-contained em `linux-x64` e `win-x64`.
 >
-> **Mídia nativa opcional:** navegador CEF e vídeo LibVLC ficam atrás da propriedade MSBuild `EnableNativeMedia` (desligada por padrão). Build normal (CI) permanece leve e sem dependências nativas; para habilitar: `dotnet build -p:EnableNativeMedia=true` (requer `libvlc`/VLC e runtime CEF instalados no SO).
+> **Mídia nativa opcional:** navegador CEF e vídeo LibVLC ficam atrás da propriedade MSBuild `EnableNativeMedia` (desligada por padrão). Build normal (CI) permanece leve e sem dependências nativas.
+>
+> **Empacotamento da build nativa:** use `scripts/package-native.sh <rid>` (ex.: `linux-x64`, `win-x64`). A build nativa NÃO é single-file (o CEF exige arquivos soltos). O runtime do CEF (`libcef`, `.pak`, locales, processo auxiliar) é empacotado via NuGet em todas as plataformas. O `libvlc` vem por NuGet no Windows/macOS; no Linux é dependência do SO (`apt-get install vlc libvlc-dev`). O job de CI `package-native-media` gera esses pacotes por plataforma. O render inline degrada com elegância (mensagem de status) quando o `libvlc` está ausente, mantendo o "player externo" sempre disponível.
 >
 > **Open source / segurança:** removida a assinatura de assembly/manifest e o `.pfx` do projeto legado; nenhum atributo proprietário de copyright/trademark permanece. Não há strings de conexão de banco de dados em nenhum projeto. O `.gitignore` agora ignora `*.pfx`/`*.snk`/`*.key`, `.env`, `secrets.json`, `config.json` e o diretório interno `.dd/`.
 
