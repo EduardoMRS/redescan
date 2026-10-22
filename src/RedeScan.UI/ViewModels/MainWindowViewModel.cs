@@ -31,7 +31,8 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator
         WifiScannerViewModel wifi,
         CamerasViewModel cameras,
         ShortcutsViewModel shortcuts,
-        BrowserViewModel browser)
+        BrowserViewModel browser,
+        NetworkConfigViewModel networkConfig)
     {
         _browser = browser;
 
@@ -43,7 +44,8 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator
             wifi,
             cameras,
             shortcuts,
-            browser
+            browser,
+            networkConfig
         };
 
         _currentPage = dashboard;

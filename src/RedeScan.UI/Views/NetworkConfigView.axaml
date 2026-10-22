@@ -1,0 +1,92 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="640"
+             x:Class="RedeScan.UI.Views.NetworkConfigView"
+             x:DataType="vm:NetworkConfigViewModel">
+
+    <ScrollViewer>
+        <StackPanel Spacing="4" MaxWidth="700" HorizontalAlignment="Left">
+
+            <!-- Aviso de segurança -->
+            <Border Classes="card" Background="#22B07D00" BorderBrush="#B07D00">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="⚠️ Operações sensíveis" FontWeight="SemiBold" />
+                    <TextBlock Classes="subtle" TextWrapping="Wrap"
+                               Text="Alterar IP/DNS ou criar PPPoE mexe na configuração real do sistema e exige privilégio de administrador/root. Uma configuração errada pode derrubar sua conexão. Sempre revise o comando na pré-visualização antes de aplicar." />
+                    <TextBlock Classes="subtle" Text="{Binding Backend, StringFormat='Backend: {0}'}" Margin="0,4,0,0" />
+                </StackPanel>
+            </Border>
+
+            <StackPanel IsEnabled="{Binding IsSupported}" Spacing="4">
+                <!-- Seleção de interface -->
+                <TextBlock Text="Interface" Classes="h2" />
+                <ComboBox ItemsSource="{Binding Interfaces}" SelectedItem="{Binding SelectedInterface}"
+                          HorizontalAlignment="Stretch" />
+
+                <!-- IP estático/dinâmico -->
+                <TextBlock Text="Endereço IP" Classes="h2" />
+                <Border Classes="card">
+                    <StackPanel Spacing="8">
+                        <ComboBox ItemsSource="{Binding Modes}" SelectedIndex="{Binding SelectedModeIndex}"
+                                  HorizontalAlignment="Stretch" />
+                        <StackPanel Spacing="8" IsVisible="{Binding IsStatic}">
+                            <Grid ColumnDefinitions="120,*">
+                                <TextBlock Grid.Column="0" Text="Endereço (CIDR)" VerticalAlignment="Center" />
+                                <TextBox Grid.Column="1" Text="{Binding AddressCidr}" Watermark="192.168.0.50/24" />
+                            </Grid>
+                            <Grid ColumnDefinitions="120,*">
+                                <TextBlock Grid.Column="0" Text="Gateway" VerticalAlignment="Center" />
+                                <TextBox Grid.Column="1" Text="{Binding Gateway}" Watermark="192.168.0.1" />
+                            </Grid>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="👁 Pré-visualizar" Command="{Binding PreviewIpCommand}" />
+                            <Button Content="✓ Aplicar IP" Classes="accent" Command="{Binding ApplyIpCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- DNS -->
+                <TextBlock Text="Servidores DNS" Classes="h2" />
+                <Border Classes="card">
+                    <StackPanel Spacing="8">
+                        <TextBox Text="{Binding DnsServers}" Watermark="8.8.8.8, 1.1.1.1" />
+                        <Button Content="✓ Aplicar DNS" Classes="accent" Command="{Binding ApplyDnsCommand}"
+                                HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Border>
+
+                <!-- PPPoE -->
+                <TextBlock Text="Conexão PPPoE" Classes="h2" />
+                <Border Classes="card">
+                    <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="120,*">
+                            <TextBlock Grid.Column="0" Text="Usuário" VerticalAlignment="Center" />
+                            <TextBox Grid.Column="1" Text="{Binding PppoeUser}" />
+                        </Grid>
+                        <Grid ColumnDefinitions="120,*">
+                            <TextBlock Grid.Column="0" Text="Senha" VerticalAlignment="Center" />
+                            <TextBox Grid.Column="1" Text="{Binding PppoePassword}" PasswordChar="•" />
+                        </Grid>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="👁 Pré-visualizar" Command="{Binding PreviewPppoeCommand}" />
+                            <Button Content="✓ Conectar PPPoE" Classes="accent" Command="{Binding ApplyPppoeCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Comando / status -->
+                <TextBlock Text="Comando" Classes="h2" />
+                <Border Classes="card">
+                    <SelectableTextBlock Text="{Binding PreviewCommand}" FontFamily="monospace"
+                                         TextWrapping="Wrap" MinHeight="40" />
+                </Border>
+            </StackPanel>
+
+            <TextBlock Classes="subtle" Text="{Binding Status}" TextWrapping="Wrap" Margin="0,8,0,0" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
