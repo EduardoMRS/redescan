@@ -31,38 +31,42 @@ RedeScan/
 ## 🚀 Fases de Implementação
 
 ### 📌 Fase 0: Preparação do Ambiente e Inicialização do Projeto
-- [ ] Instalar o SDK do **.NET 8 ou .NET 9** e templates do Avalonia UI (`dotnet new install Avalonia.Templates`).
-- [ ] Criar a nova estrutura de solução e projetos (`RedeScan.Core`, `RedeScan.UI`, `RedeScan.Desktop`).
+- [x] Instalar o SDK do **.NET 8** no ambiente de usuário (`~/.dotnet`).
+- [ ] Instalar templates do Avalonia UI (`dotnet new install Avalonia.Templates`).
+- [x] Criar a nova estrutura de solução e projeto Core (`RedeScan.sln`, `src/RedeScan.Core`, `tests/RedeScan.Core.Tests`).
+- [ ] Criar projetos de UI e Runner (`RedeScan.UI`, `RedeScan.Desktop`).
 - [ ] Configurar pacotes essenciais:
   - `Avalonia` e `Avalonia.Themes.Fluent`
   - `CommunityToolkit.Mvvm` (padrão MVVM com Source Generators)
   - `Avalonia.WebView` (navegador multiplataforma integrado)
   - `LibVLCSharp.Avalonia` + `VideoLAN.LibVLC.*` (reprodução de stream RTSP)
-  - `Microsoft.Extensions.DependencyInjection` (injeção de dependência)
-  - `System.Text.Json` (gerenciamento de perfis e configurações)
+  - [x] `Microsoft.Extensions.DependencyInjection` (injeção de dependência)
+  - [x] `System.Text.Json` (gerenciamento de perfis e configurações)
 
 ---
 
 ### 📌 Fase 1: Camada Core & Serviços de Rede (Back-End)
-- [ ] **Configurações & Segurança (Fim do Hardcode!):**
-  - [ ] Implementar serviço de configuração em JSON (`appsettings.json` ou pasta do usuário `~/.config/redescan/`).
-  - [ ] Modelar lista de câmeras RTSP (nome, grupo, URL rtsp, credenciais desacopladas).
-  - [ ] Modelar lista dinâmica de atalhos e roteadores comuns (IPs, portas, rótulos).
-- [ ] **Informações de Rede Local:**
-  - [ ] Leitor de IP local e Gateway padrão multiplataforma usando `System.Net.NetworkInformation`.
-- [ ] **Scanner de IPs na Sub-rede (Ping Sweep):**
-  - [ ] Varredura assíncrona e concorrente (`Task.WhenAll` ou `Parallel.ForEachAsync`) do range `.1` a `.254`.
-  - [ ] Resolução reversa de Hostname e tempo de resposta.
-- [ ] **Scanner de Portas TCP:**
-  - [ ] Verificador de portas usando `TcpClient.ConnectAsync` com timeout configurável.
-  - [ ] Dicionário de portas conhecidas (21 FTP, 22 SSH, 80 HTTP, 443 HTTPS, 554 RTSP, 8080, etc.).
-- [ ] **Diagnóstico: Ping Contínuo & Traceroute:**
-  - [ ] Serviço de Ping assíncrono com histórico de latência e perda de pacotes.
-  - [ ] Traceroute via incremento progressivo de `PingOptions.Ttl`.
-- [ ] **Simulador de Teste de Carga / Estresse (DDoS Simulator):**
-  - [ ] Motor assíncrono de rajadas configuráveis (UDP Flooder ou HTTP flood com `HttpClient`).
-  - [ ] Parâmetros de segurança: limite de taxa, tempo máximo de execução e botão de cancelamento imediato (`CancellationToken`).
-  - [ ] Métricas em tempo real: pacotes/s, requisições com sucesso/erro, vazão estimada.
+- [x] **Configurações & Segurança (Fim do Hardcode!):**
+  - [x] Implementar serviço de configuração em JSON (`ConfigurationService` em `~/.config/redescan/config.json`).
+  - [x] Modelar lista de câmeras RTSP (`RtspCameraConfig` com injeção segura de credenciais).
+  - [x] Modelar lista dinâmica de atalhos e roteadores comuns (`NetworkShortcut`, `AppSettings.CreateDefault()`).
+- [x] **Informações de Rede Local:**
+  - [x] Leitor de IP local, máscara e Gateway padrão multiplataforma (`NetworkInterfaceService`).
+- [x] **Scanner de IPs na Sub-rede (Ping Sweep):**
+  - [x] Varredura assíncrona e concorrente (`Parallel.ForEachAsync`) do range `.1` a `.254` (`NetworkScannerService`).
+  - [x] Resolução reversa de Hostname e tempo de resposta.
+- [x] **Scanner de Portas TCP:**
+  - [x] Verificador de portas usando `TcpClient.ConnectAsync` com timeout configurável (`PortScannerService`).
+  - [x] Dicionário de portas conhecidas (21 FTP, 22 SSH, 80 HTTP, 443 HTTPS, 554 RTSP, 8080, etc.).
+- [x] **Diagnóstico: Ping Contínuo & Traceroute:**
+  - [x] Serviço de Ping assíncrono com histórico de latência e perda de pacotes (`PingService`).
+  - [x] Traceroute via incremento progressivo de `PingOptions.Ttl`.
+- [x] **Simulador de Teste de Carga / Estresse (DDoS Simulator):**
+  - [x] Motor assíncrono de rajadas configuráveis com UDP, HTTP e TCP (`LoadTestService`).
+  - [x] Parâmetros de segurança: limite de taxa, tempo máximo de execução e botão de cancelamento imediato (`CancellationToken`).
+  - [x] Métricas em tempo real: pacotes/s, Mbps, requisições com sucesso/erro, vazão estimada.
+- [x] **Suíte de Testes Automatizados (xUnit):**
+  - [x] 7 testes unitários cobrindo configuração, scanner de portas, simulação de estresse, cancelamento e interfaces de rede aprovados com 100% de sucesso.
 
 ---
 

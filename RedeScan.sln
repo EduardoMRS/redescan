@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{71700623-954C-4FD8-96F0-6B5372588964}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedeScan.Core", "src\RedeScan.Core\RedeScan.Core.csproj", "{68D33265-1028-4B06-9EB3-614BD7E57866}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{52A73E5A-FB85-4EE6-AEC7-8C03EA90B7EE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedeScan.Core.Tests", "tests\RedeScan.Core.Tests\RedeScan.Core.Tests.csproj", "{217BF4E3-0A66-4646-A04F-2C14FCF97095}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{68D33265-1028-4B06-9EB3-614BD7E57866}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68D33265-1028-4B06-9EB3-614BD7E57866}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68D33265-1028-4B06-9EB3-614BD7E57866}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68D33265-1028-4B06-9EB3-614BD7E57866}.Release|Any CPU.Build.0 = Release|Any CPU
+		{217BF4E3-0A66-4646-A04F-2C14FCF97095}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{217BF4E3-0A66-4646-A04F-2C14FCF97095}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{217BF4E3-0A66-4646-A04F-2C14FCF97095}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{217BF4E3-0A66-4646-A04F-2C14FCF97095}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{68D33265-1028-4B06-9EB3-614BD7E57866} = {71700623-954C-4FD8-96F0-6B5372588964}
+		{217BF4E3-0A66-4646-A04F-2C14FCF97095} = {52A73E5A-FB85-4EE6-AEC7-8C03EA90B7EE}
+	EndGlobalSection
+EndGlobal
