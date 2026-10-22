@@ -21,6 +21,37 @@ permissions:
 
 jobs:
   # ===========================================================================
+  # VERSÃO: resolve a tag (ex.: v1.0.0) e o número puro (1.0.0) para os pacotes.
+  # ===========================================================================
+  version:
+    name: Resolver versão
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.v.outputs.tag }}
+      number: ${{ steps.v.outputs.number }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
+    steps:
+      - id: v
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            TAG="${GITHUB_REF_NAME}"; PRE="false"
+          elif [ -n "${{ github.event.inputs.tag }}" ]; then
+            TAG="${{ github.event.inputs.tag }}"; PRE="false"
+          else
+            TAG="manual-$(date +%Y%m%d-%H%M%S)"; PRE="true"
+          fi
+          NUM="$(echo "$TAG" | sed 's/^v//')"
+          # Pacotes (MSI/deb/rpm) exigem número x.y.z; usa 0.0.0 em build de teste.
+          case "$NUM" in
+            [0-9]*.[0-9]*.[0-9]*) ;;
+            *) NUM="0.0.0" ;;
+          esac
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "number=$NUM" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRE" >> "$GITHUB_OUTPUT"
+          echo "Resolvido: tag=$TAG number=$NUM prerelease=$PRE"
+
+  # ===========================================================================
   # PORTÁTIL (leve): executável único por plataforma, sem motor web embutido.
   # ===========================================================================
   portable-desktop:
@@ -72,11 +103,12 @@ jobs:
           if-no-files-found: ignore
 
   # ===========================================================================
-  # FULL (motor web CEF + vídeo LibVLC): pacote de vários arquivos, por isso .zip.
-  # Windows e Ubuntu nos runners nativos; Fedora dentro de um container.
+  # FULL (motor web CEF + vídeo LibVLC): instaladores nativos por plataforma —
+  # .msi no Windows, .deb no Ubuntu/Debian, .rpm no Fedora/RHEL.
   # ===========================================================================
   full-windows:
-    name: Full — Windows
+    name: Full — Windows (.msi)
+    needs: version
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -90,15 +122,23 @@ jobs:
           -p:EnableNativeMedia=true -p:PublishSingleFile=false
           -p:DebugType=none -p:DebugSymbols=false
           --output ./full/win-x64
-      - name: Compactar
-        run: Compress-Archive -Path ./full/win-x64/* -DestinationPath ./RedeScan-Full-Windows-x64.zip
+      - name: Instalar WiX (gerador de MSI)
+        run: dotnet tool install --global wix
+      - name: Gerar instalador .msi
+        shell: pwsh
+        run: |
+          $ver = "${{ needs.version.outputs.number }}"
+          wix build scripts/packaging/redescan.wxs `
+            -d PublishDir=full\win-x64 -d Version=$ver `
+            -o RedeScan-Full-Windows-x64.msi
       - uses: actions/upload-artifact@v4
         with:
           name: RedeScan-Full-Windows
-          path: ./RedeScan-Full-Windows-x64.zip
+          path: ./RedeScan-Full-Windows-x64.msi
 
   full-ubuntu:
-    name: Full — Linux (Ubuntu)
+    name: Full — Linux (.deb)
+    needs: version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -106,7 +146,7 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - name: Instalar libvlc (apt)
-        run: sudo apt-get update && sudo apt-get install -y libvlc-dev vlc zip
+        run: sudo apt-get update && sudo apt-get install -y libvlc-dev vlc
       - name: Publicar pacote Full (CEF + LibVLC)
         run: >
           dotnet publish src/RedeScan.Desktop/RedeScan.Desktop.csproj
@@ -114,26 +154,27 @@ jobs:
           -p:EnableNativeMedia=true -p:PublishSingleFile=false
           -p:DebugType=none -p:DebugSymbols=false
           --output ./full/linux-x64
-      - name: Compactar
-        run: cd ./full/linux-x64 && zip -r "../../RedeScan-Full-Linux-Ubuntu-x64.zip" .
+      - name: Gerar instalador .deb
+        run: bash scripts/packaging/build-deb.sh ./full/linux-x64 "${{ needs.version.outputs.number }}" RedeScan-Full-Linux-x64.deb
       - uses: actions/upload-artifact@v4
         with:
           name: RedeScan-Full-Linux-Ubuntu
-          path: ./RedeScan-Full-Linux-Ubuntu-x64.zip
+          path: ./RedeScan-Full-Linux-x64.deb
 
   full-fedora:
-    name: Full — Linux (Fedora)
+    name: Full — Linux (.rpm)
+    needs: version
     runs-on: ubuntu-latest
     container: fedora:40
     # Não bloqueia a release: se o Fedora falhar, os demais pacotes saem mesmo assim.
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-      # libvlc + utilitários via dnf. O SDK do .NET vem SEMPRE do script oficial
-      # da Microsoft: o pacote dotnet-sdk-8.0 do Fedora é da banda 8.0.1xx, que
-      # não satisfaz o global.json (8.0.4xx). O script respeita o global.json.
+      # libvlc + utilitários + rpm-build via dnf. O SDK do .NET vem SEMPRE do
+      # script oficial: o pacote dnf é da banda 8.0.1xx, que não satisfaz o
+      # global.json (8.0.4xx). O script respeita o global.json.
       - name: Instalar dependências (dnf)
-        run: dnf -y install vlc-devel vlc-libs zip findutils libicu krb5-libs tar which curl
+        run: dnf -y install vlc-devel vlc-libs rpm-build findutils libicu krb5-libs tar which curl
       - name: Instalar .NET 8 SDK (script oficial, banda 8.0.4xx)
         run: |
           curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
@@ -149,12 +190,12 @@ jobs:
           -p:EnableNativeMedia=true -p:PublishSingleFile=false
           -p:DebugType=none -p:DebugSymbols=false
           --output ./full/fedora-x64
-      - name: Compactar
-        run: cd ./full/fedora-x64 && zip -r "../../RedeScan-Full-Linux-Fedora-x64.zip" .
+      - name: Gerar instalador .rpm
+        run: bash scripts/packaging/build-rpm.sh ./full/fedora-x64 "${{ needs.version.outputs.number }}" RedeScan-Full-Linux-x86_64.rpm
       - uses: actions/upload-artifact@v4
         with:
           name: RedeScan-Full-Linux-Fedora
-          path: ./RedeScan-Full-Linux-Fedora-x64.zip
+          path: ./RedeScan-Full-Linux-x86_64.rpm
 
   # ===========================================================================
   # ANDROID: APK (debug-signed). O navegador no Android usa "abrir no sistema"
@@ -203,7 +244,7 @@ jobs:
   # ===========================================================================
   publish:
     name: Publicar GitHub Release
-    needs: [ portable-desktop, full-windows, full-ubuntu, full-fedora, android-apk ]
+    needs: [ version, portable-desktop, full-windows, full-ubuntu, full-fedora, android-apk ]
     runs-on: ubuntu-latest
     steps:
       - name: Baixar todos os artefatos
@@ -214,26 +255,12 @@ jobs:
       - name: Listar artefatos
         run: find ./artifacts -type f
 
-      - name: Definir tag/pré-release
-        id: ver
-        run: |
-          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
-            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-            echo "prerelease=false" >> "$GITHUB_OUTPUT"
-          elif [ -n "${{ github.event.inputs.tag }}" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
-            echo "prerelease=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=manual-$(date +%Y%m%d-%H%M%S)" >> "$GITHUB_OUTPUT"
-            echo "prerelease=true" >> "$GITHUB_OUTPUT"
-          fi
-
       # Gera o manifesto latest.json com a versão e os links de download desta
       # release. Os assets ficam em /releases/download/<tag>/<arquivo>.
       - name: Gerar latest.json
         run: |
-          TAG="${{ steps.ver.outputs.tag }}"
-          VER="$(echo "$TAG" | sed 's/^v//')"
+          TAG="${{ needs.version.outputs.tag }}"
+          VER="${{ needs.version.outputs.number }}"
           BASE="https://github.com/${{ github.repository }}/releases/download/${TAG}"
           cat > latest.json <<EOF
           {
@@ -243,10 +270,10 @@ jobs:
             "notes": "Release ${TAG}",
             "downloads": {
               "windows": "${BASE}/RedeScan-Windows-x64.exe",
-              "windowsFull": "${BASE}/RedeScan-Full-Windows-x64.zip",
+              "windowsFull": "${BASE}/RedeScan-Full-Windows-x64.msi",
               "linux": "${BASE}/RedeScan-Linux-x86_64.AppImage",
-              "linuxFullUbuntu": "${BASE}/RedeScan-Full-Linux-Ubuntu-x64.zip",
-              "linuxFullFedora": "${BASE}/RedeScan-Full-Linux-Fedora-x64.zip",
+              "linuxFullUbuntu": "${BASE}/RedeScan-Full-Linux-x64.deb",
+              "linuxFullFedora": "${BASE}/RedeScan-Full-Linux-x86_64.rpm",
               "android": "${BASE}/RedeScan-Android.apk"
             }
           }
@@ -256,14 +283,16 @@ jobs:
       - name: Criar/atualizar a Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.ver.outputs.tag }}
-          prerelease: ${{ steps.ver.outputs.prerelease }}
+          tag_name: ${{ needs.version.outputs.tag }}
+          prerelease: ${{ needs.version.outputs.prerelease }}
           generate_release_notes: true
           files: |
             ./artifacts/**/*.exe
             ./artifacts/**/*.AppImage
             ./artifacts/**/*.apk
-            ./artifacts/**/*.zip
+            ./artifacts/**/*.msi
+            ./artifacts/**/*.deb
+            ./artifacts/**/*.rpm
             ./latest.json
 
       # Disponibiliza o latest.json como artefato do workflow para você subir ao
