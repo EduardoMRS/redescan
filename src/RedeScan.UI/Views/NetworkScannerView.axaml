@@ -99,6 +99,11 @@
                     <DockPanel Margin="0,8,0,0">
                         <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
                             <TextBlock Classes="subtle" Text="{Binding SelectedHost.IpAddress, FallbackValue='Selecione um host'}" />
+                            <CheckBox Content="Varrer todas as portas (1–65535)"
+                                      IsChecked="{Binding ScanAllPorts}"
+                                      IsEnabled="{Binding !IsScanningPorts}" />
+                            <TextBlock Classes="subtle" FontSize="10" TextWrapping="Wrap"
+                                       Text="Sem marcar, varre só as portas de serviços conhecidos (rápido). Marcado, testa todas as 65.535 portas TCP (mais lento)." />
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Button Content="Escanear portas"
                                         Command="{Binding ScanPortsCommand}"
@@ -106,6 +111,8 @@
                                 <Button Content="Cancelar"
                                         Command="{Binding CancelPortScanCommand}"
                                         IsVisible="{Binding IsScanningPorts}" />
+                                <ProgressBar IsIndeterminate="True" Width="80" VerticalAlignment="Center"
+                                             IsVisible="{Binding IsScanningPorts}" />
                             </StackPanel>
                         </StackPanel>
                         <DataGrid ItemsSource="{Binding OpenPorts}" IsReadOnly="True">

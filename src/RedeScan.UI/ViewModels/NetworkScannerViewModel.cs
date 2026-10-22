@@ -47,6 +47,13 @@ public partial class NetworkScannerViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isScanningPorts;
 
+    /// <summary>
+    /// Quando ligado, o scan de portas varre TODAS as portas TCP (1–65535) em
+    /// vez de apenas as portas de serviços conhecidos.
+    /// </summary>
+    [ObservableProperty]
+    private bool _scanAllPorts;
+
     [ObservableProperty]
     private string _status = "Pronto.";
 
@@ -156,7 +163,28 @@ public partial class NetworkScannerViewModel : ViewModelBase
         IsScanningPorts = true;
         OpenPorts.Clear();
         var ip = SelectedHost.IpAddress;
-        Status = $"Varrendo portas conhecidas de {ip}…";
+
+        // Modo completo: varre TODAS as portas TCP (1–65535). Mais lento e mais
+        // "barulhento" na rede, mas não deixa nenhuma porta de fora. Usa timeout
+        // curto e concorrência alta para compensar o volume. Modo rápido: só as
+        // portas de serviços conhecidos.
+        IEnumerable<int> portsToScan;
+        int timeoutMs;
+        int maxConcurrency;
+        if (ScanAllPorts)
+        {
+            portsToScan = Enumerable.Range(1, 65535);
+            timeoutMs = 300;
+            maxConcurrency = 600;
+            Status = $"Varrendo TODAS as portas (1–65535) de {ip}… isso pode levar alguns minutos.";
+        }
+        else
+        {
+            portsToScan = _portScanner.KnownPorts.Keys;
+            timeoutMs = 500;
+            maxConcurrency = 20;
+            Status = $"Varrendo portas conhecidas de {ip}…";
+        }
 
         var progress = new Progress<PortScanResult>(result =>
         {
@@ -170,10 +198,13 @@ public partial class NetworkScannerViewModel : ViewModelBase
         {
             await _portScanner.ScanPortsAsync(
                 ip,
-                _portScanner.KnownPorts.Keys,
+                portsToScan,
+                timeoutMs: timeoutMs,
+                maxConcurrency: maxConcurrency,
                 progress: progress,
                 ct: _portCts.Token);
-            Status = $"{OpenPorts.Count} porta(s) aberta(s) em {ip}.";
+            Status = $"{OpenPorts.Count} porta(s) aberta(s) em {ip}" +
+                     (ScanAllPorts ? " (varredura completa 1–65535)." : ".");
         }
         catch (OperationCanceledException)
         {

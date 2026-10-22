@@ -78,6 +78,47 @@
                     </StackPanel>
                 </Border>
 
+                <!-- VLAN (802.1Q) -->
+                <TextBlock Text="VLAN (802.1Q)" Classes="h2" />
+                <Border Classes="card">
+                    <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="120,*">
+                            <TextBlock Grid.Column="0" Text="Interface física" VerticalAlignment="Center" />
+                            <TextBox Grid.Column="1" Text="{Binding VlanParentInterface}" Watermark="ex.: eth0, Ethernet" />
+                        </Grid>
+                        <Grid ColumnDefinitions="120,*">
+                            <TextBlock Grid.Column="0" Text="ID da VLAN" VerticalAlignment="Center" />
+                            <TextBox Grid.Column="1" Text="{Binding VlanId}" Watermark="1–4094 (ex.: 10)" />
+                        </Grid>
+                        <Grid ColumnDefinitions="120,*">
+                            <TextBlock Grid.Column="0" Text="Nome (opcional)" VerticalAlignment="Center" />
+                            <TextBox Grid.Column="1" Text="{Binding VlanName}" Watermark="padrão: interface.ID (ex.: eth0.10)" />
+                        </Grid>
+                        <ComboBox ItemsSource="{Binding Modes}" SelectedIndex="{Binding VlanModeIndex}"
+                                  HorizontalAlignment="Stretch" />
+                        <StackPanel Spacing="8" IsVisible="{Binding IsVlanStatic}">
+                            <Grid ColumnDefinitions="120,*">
+                                <TextBlock Grid.Column="0" Text="Endereço (CIDR)" VerticalAlignment="Center" />
+                                <TextBox Grid.Column="1" Text="{Binding VlanAddressCidr}" Watermark="192.168.10.2/24" />
+                            </Grid>
+                            <Grid ColumnDefinitions="120,*">
+                                <TextBlock Grid.Column="0" Text="Gateway" VerticalAlignment="Center" />
+                                <TextBox Grid.Column="1" Text="{Binding VlanGateway}" Watermark="192.168.10.1 (opcional)" />
+                            </Grid>
+                            <Grid ColumnDefinitions="120,*">
+                                <TextBlock Grid.Column="0" Text="DNS" VerticalAlignment="Center" />
+                                <TextBox Grid.Column="1" Text="{Binding VlanDnsServers}" Watermark="8.8.8.8, 1.1.1.1 (opcional)" />
+                            </Grid>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="👁 Pré-visualizar" Command="{Binding PreviewVlanCommand}" />
+                            <Button Content="✓ Criar VLAN" Classes="accent" Command="{Binding ApplyVlanCommand}" />
+                        </StackPanel>
+                        <TextBlock Classes="subtle" FontSize="10" TextWrapping="Wrap"
+                                   Text="No Linux cria a VLAN via nmcli (NetworkManager). No Windows, VLANs dependem da ferramenta do fabricante da placa — a pré-visualização mostra as instruções." />
+                    </StackPanel>
+                </Border>
+
                 <!-- Comando / status -->
                 <TextBlock Text="Comando" Classes="h2" />
                 <Border Classes="card">

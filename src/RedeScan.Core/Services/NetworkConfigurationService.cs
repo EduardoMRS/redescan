@@ -133,6 +133,76 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService
         return result with { Command = previewCommand };
     }
 
+    public async Task<NetworkCommandResult> ConfigureVlanAsync(VlanRequest request, bool apply, CancellationToken ct = default)
+    {
+        if (!IsSupported)
+        {
+            return NotSupported();
+        }
+
+        if (request.VlanId is < 1 or > 4094)
+        {
+            return new NetworkCommandResult
+            {
+                Command = string.Empty,
+                Applied = false,
+                Success = false,
+                Error = "ID de VLAN inválido. Use um valor entre 1 e 4094.",
+                RequiresPrivilege = false
+            };
+        }
+
+        var name = request.EffectiveName;
+
+        if (_isLinux)
+        {
+            // 1) Cria a interface VLAN sobre a física.
+            var command =
+                $"nmcli con add type vlan con-name \"{name}\" " +
+                $"ifname \"{name}\" dev \"{request.ParentInterface}\" id {request.VlanId}";
+
+            // 2) Define o IP (DHCP ou estático).
+            if (request.Mode == IpAssignmentMode.Static)
+            {
+                var dns = request.DnsServers.Count > 0
+                    ? $" ipv4.dns \"{string.Join(" ", request.DnsServers)}\""
+                    : string.Empty;
+                var gw = string.IsNullOrWhiteSpace(request.Gateway)
+                    ? string.Empty
+                    : $" ipv4.gateway \"{request.Gateway}\"";
+                command += $" && nmcli con mod \"{name}\" ipv4.method manual " +
+                           $"ipv4.addresses \"{request.AddressCidr}\"{gw}{dns}";
+            }
+            else
+            {
+                command += $" && nmcli con mod \"{name}\" ipv4.method auto";
+            }
+
+            // 3) Sobe a conexão.
+            command += $" && nmcli con up \"{name}\"";
+
+            return await RunOrPreviewAsync(command, apply, ct);
+        }
+
+        // Windows: netsh não cria VLAN 802.1Q. Isso depende do driver/fabricante
+        // (Intel PROSet, Realtek, etc.). Orienta o usuário em vez de fingir que
+        // aplica — e nunca executa nada.
+        var guidance =
+            $":: O Windows não cria VLANs via netsh. Use a ferramenta do fabricante\r\n" +
+            $":: da placa de rede (ex.: Intel PROSet/Advanced Network Services) e\r\n" +
+            $":: crie uma VLAN com ID {request.VlanId} sobre \"{request.ParentInterface}\".\r\n" +
+            $":: Depois, configure o IP da nova interface normalmente.";
+
+        return new NetworkCommandResult
+        {
+            Command = guidance,
+            Applied = false,
+            Success = false,
+            Error = "Criação de VLAN não é suportada via netsh no Windows. Veja as instruções no comando.",
+            RequiresPrivilege = true
+        };
+    }
+
     // ------------------------------------------------------------------ infra
     private static NetworkCommandResult NotSupported() => new()
     {

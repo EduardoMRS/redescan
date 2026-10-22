@@ -30,4 +30,12 @@ public interface INetworkConfigurationService
     /// Cria/ativa uma conexão PPPoE na interface informada.
     /// </summary>
     Task<NetworkCommandResult> ConfigurePppoeAsync(PppoeRequest request, bool apply, CancellationToken ct = default);
+
+    /// <summary>
+    /// Cria uma interface VLAN (802.1Q) sobre uma interface física, com IP via
+    /// DHCP ou estático. No Linux usa <c>nmcli con add type vlan</c>. No Windows
+    /// não é possível via <c>netsh</c> (depende do driver/fabricante da placa),
+    /// então apenas orienta.
+    /// </summary>
+    Task<NetworkCommandResult> ConfigureVlanAsync(VlanRequest request, bool apply, CancellationToken ct = default);
 }

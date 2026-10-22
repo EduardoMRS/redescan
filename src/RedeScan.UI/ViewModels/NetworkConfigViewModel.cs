@@ -32,6 +32,19 @@ public partial class NetworkConfigViewModel : ViewModelBase
     [ObservableProperty] private string _pppoeUser = string.Empty;
     [ObservableProperty] private string _pppoePassword = string.Empty;
 
+    // VLAN (802.1Q)
+    [ObservableProperty] private string _vlanParentInterface = string.Empty;
+    [ObservableProperty] private string _vlanId = "10";
+    [ObservableProperty] private string _vlanName = string.Empty;
+    [ObservableProperty] private int _vlanModeIndex;              // 0 = DHCP, 1 = estático
+    [ObservableProperty] private string _vlanAddressCidr = "192.168.10.2/24";
+    [ObservableProperty] private string _vlanGateway = "192.168.10.1";
+    [ObservableProperty] private string _vlanDnsServers = "8.8.8.8, 1.1.1.1";
+
+    public bool IsVlanStatic => VlanModeIndex == 1;
+
+    partial void OnVlanModeIndexChanged(int value) => OnPropertyChanged(nameof(IsVlanStatic));
+
     [ObservableProperty] private string _backend = string.Empty;
     [ObservableProperty] private bool _isSupported;
     [ObservableProperty] private string _previewCommand = string.Empty;
@@ -56,10 +69,21 @@ public partial class NetworkConfigViewModel : ViewModelBase
             Interfaces.Add(name);
         }
         SelectedInterface = Interfaces.FirstOrDefault();
+        VlanParentInterface = SelectedInterface ?? string.Empty;
 
         if (!IsSupported)
         {
             Status = "Configuração de rede não suportada nesta plataforma.";
+        }
+    }
+
+    // Por padrão, a VLAN herda a interface física selecionada acima, mas o
+    // usuário pode trocar. Só sincroniza enquanto o campo não foi editado à mão.
+    partial void OnSelectedInterfaceChanged(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(VlanParentInterface) && !string.IsNullOrWhiteSpace(value))
+        {
+            VlanParentInterface = value;
         }
     }
 
@@ -128,6 +152,58 @@ public partial class NetworkConfigViewModel : ViewModelBase
         Username = PppoeUser,
         Password = PppoePassword
     };
+
+    // ----------------------------------------------------------------- VLAN
+    private VlanRequest BuildVlan() => new()
+    {
+        ParentInterface = VlanParentInterface,
+        VlanId = int.TryParse(VlanId, out var id) ? id : 0,
+        ConnectionName = string.IsNullOrWhiteSpace(VlanName) ? null : VlanName.Trim(),
+        Mode = IsVlanStatic ? IpAssignmentMode.Static : IpAssignmentMode.Dynamic,
+        AddressCidr = VlanAddressCidr,
+        Gateway = VlanGateway,
+        DnsServers = VlanDnsServers
+            .Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList()
+    };
+
+    private bool ValidateVlan()
+    {
+        if (string.IsNullOrWhiteSpace(VlanParentInterface))
+        {
+            Status = "Informe a interface física da VLAN.";
+            return false;
+        }
+        if (!int.TryParse(VlanId, out var id) || id is < 1 or > 4094)
+        {
+            Status = "ID de VLAN inválido. Use um valor entre 1 e 4094.";
+            return false;
+        }
+        if (IsVlanStatic && string.IsNullOrWhiteSpace(VlanAddressCidr))
+        {
+            Status = "Para VLAN com IP estático, informe o endereço (CIDR).";
+            return false;
+        }
+        return true;
+    }
+
+    [RelayCommand]
+    private async Task PreviewVlanAsync(CancellationToken ct)
+    {
+        if (!ValidateVlan()) return;
+        var r = await _netConfig.ConfigureVlanAsync(BuildVlan(), apply: false, ct);
+        PreviewCommand = r.Command;
+        Status = "Pré-visualização da VLAN (nada aplicado). Revise e clique em Aplicar.";
+    }
+
+    [RelayCommand]
+    private async Task ApplyVlanAsync(CancellationToken ct)
+    {
+        if (!ValidateVlan()) return;
+        Status = "Criando interface VLAN…";
+        var r = await _netConfig.ConfigureVlanAsync(BuildVlan(), apply: true, ct);
+        ReportResult(r, "VLAN");
+    }
 
     private bool Validate()
     {

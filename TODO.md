@@ -179,3 +179,8 @@ RedeScan/
 - [x] **Câmeras — tabela à esquerda com busca e filtro:** `ListBox` de câmeras (nome + local + miniatura de prévia), com `SearchText` (nome/local) e `GroupFilter` (combo de grupos). `FilteredCameras` aplica os dois.
 - [x] **Câmeras — grade de vídeo 1 a 6 em tempo real:** seletor de layout (1–6); `ActiveSlots` + `CameraSlot` por posição; cada slot ganha seu próprio `MediaPlayer`/`VideoView` LibVLC (sob `ENABLE_NATIVE_MEDIA`), com parar por slot e parar tudo. `GridColumns` ajusta as colunas (1→1, 2→2, 3→3, 4→2, 5/6→3).
 - [x] **Câmeras — editor/criador em modal:** `CameraEditorWindow` + `CameraEditorViewModel`, abertos via `ICameraEditorDialog.EditAsync` (ShowDialog sobre a janela principal; no Android devolve a câmera sem modal). Substitui o editor inline.
+
+---
+### 🔌 Scan de portas completo + 🧬 VLAN na config de rede
+- [x] **Scan de portas — modo completo:** além das ~28 portas conhecidas (rápido), a aba "Portas" do scanner ganhou a opção "Varrer todas as portas (1–65535)". No modo completo usa timeout curto (300ms) e concorrência alta (600) para compensar o volume; mantém o nome do serviço nas portas conhecidas.
+- [x] **VLAN 802.1Q na configuração de rede:** nova seção "VLAN" com interface física, ID (1–4094), nome opcional (padrão interface.ID), e IP DHCP/estático (CIDR/gateway/DNS). No Linux cria via `nmcli con add type vlan` + `con mod` + `con up`; no Windows mostra orientação (netsh não cria VLAN). Mantém o padrão preview/apply (nunca aplica sem confirmação). Model `VlanRequest`, método `ConfigureVlanAsync`.
