@@ -65,7 +65,7 @@ git push origin :refs/tags/v1.0.0
   do repositório oficial pode não decodificar H.264 de algumas câmeras; nesse caso instale
   o `ffmpeg` do RPM Fusion.
 - O instalador Windows é validado no CI (job `validate-windows-installer`) compilando o
-  `.iss` num container Wine — o que confere sintaxe e script, mas não executa a instalação.
+  `.iss` no runner Windows — o que confere sintaxe e script, mas não executa a instalação.
 
 ---
 

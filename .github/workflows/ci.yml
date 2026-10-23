@@ -39,17 +39,21 @@ jobs:
       - name: Executar testes
         run: dotnet test RedeScan.sln --configuration Release --no-build --verbosity normal
 
-  # Valida o script do instalador Windows (Inno Setup) a cada mudança, sem
-  # precisar de um runner Windows: compila o .iss num container Wine.
+  # Valida o script do instalador Windows (Inno Setup) a cada mudança.
+  # Roda no runner Windows, onde o iscc já vem instalado — o mesmo ambiente do
+  # release. (Rodar via Wine em container falha no runner Ubuntu 26.04:
+  # "wineserver: socket: Function not implemented".)
   validate-windows-installer:
     name: Validar instalador Windows (Inno Setup)
-    runs-on: ubuntu-latest
-    continue-on-error: true
+    runs-on: windows-latest
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
       - name: Compilar o .iss com uma pasta publicada fictícia
+        shell: pwsh
         run: |
-          mkdir -p full/win-x64 && echo placeholder > full/win-x64/RedeScan.exe
-          docker run --rm -v "$PWD:/work" amake/innosetup \
-            '/DPublishDir=Z:\work\full\win-x64' /DAppVersion=0.0.0 scripts/packaging/redescan.iss
+          New-Item -ItemType Directory -Force -Path full\win-x64 | Out-Null
+          Set-Content -Path full\win-x64\RedeScan.exe -Value placeholder
+          $pub = (Resolve-Path "full\win-x64").Path
+          iscc /DPublishDir="$pub" /DAppVersion="0.0.0" scripts\packaging\redescan.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
