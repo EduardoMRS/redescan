@@ -1,5 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:RedeScan.UI.Controls"
+             xmlns:material="using:Material.Icons.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
@@ -109,13 +111,13 @@
                     <TextBlock TextWrapping="Wrap" Classes="subtle"
                                Text="Em caso de erro, um relatório crash-*.log é gravado nesta pasta. Iniciando pelo terminal (ex.: redescan --verbose ou sudo redescan) o log também aparece no console." />
                     <SelectableTextBlock Text="{Binding LogFolder}" FontFamily="monospace" TextWrapping="Wrap" />
-                    <Button Content="📂 Abrir pasta de logs" Command="{Binding OpenLogFolderCommand}"
-                            HorizontalAlignment="Left" />
+                    <controls:IconButton Command="{Binding OpenLogFolderCommand}"
+                            HorizontalAlignment="Left" Icon="FolderOpenOutline" Text="Abrir pasta de logs"/>
                 </StackPanel>
             </Border>
 
-            <Button Content="💾 Salvar preferências" Classes="accent"
-                    Command="{Binding SaveCommand}" HorizontalAlignment="Left" Margin="0,4,0,0" />
+            <controls:IconButton Classes="accent"
+                    Command="{Binding SaveCommand}" HorizontalAlignment="Left" Margin="0,4,0,0" Icon="ContentSave" Text="Salvar preferências"/>
 
             <TextBlock Classes="subtle" Text="{Binding Status}" TextWrapping="Wrap" Margin="0,8,0,0" />
         </StackPanel>

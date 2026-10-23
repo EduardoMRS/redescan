@@ -1,5 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:RedeScan.UI.Controls"
+             xmlns:material="using:Material.Icons.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
@@ -10,15 +12,15 @@
     <DockPanel>
         <!-- Controles -->
         <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
-            <Button Content="▶ Iniciar" Classes="accent" Command="{Binding StartCommand}"
-                    IsVisible="{Binding IsStopped}" />
-            <Button Content="⏸ Parar" Command="{Binding StopCommand}" IsVisible="{Binding IsRunning}" />
-            <TextBox Text="{Binding FilterText}" Width="230" Watermark="🔍 Filtrar IP, porta ou processo…" />
+            <controls:IconButton Classes="accent" Command="{Binding StartCommand}"
+                    IsVisible="{Binding IsStopped}" Icon="Play" Text="Iniciar"/>
+            <controls:IconButton Command="{Binding StopCommand}" IsVisible="{Binding IsRunning}" Icon="Pause" Text="Parar"/>
+            <TextBox Text="{Binding FilterText}" Width="230" Watermark="Filtrar IP, porta ou processo…" />
             <CheckBox Content="Só entradas" IsChecked="{Binding OnlyInbound}" />
             <CheckBox Content="Ocultar portas em escuta" IsChecked="{Binding HideListening}" />
             <CheckBox Content="Ocultar loopback" IsChecked="{Binding HideLoopback}" />
-            <Button Content="🧹 Limpar histórico" Command="{Binding ClearHistoryCommand}" />
-            <Button Content="📤 Exportar CSV" Click="OnExportClick" />
+            <controls:IconButton Command="{Binding ClearHistoryCommand}" Icon="Broom" Text="Limpar histórico"/>
+            <controls:IconButton Click="OnExportClick" Icon="Export" Text="Exportar CSV"/>
         </WrapPanel>
 
         <StackPanel DockPanel.Dock="Bottom" Spacing="2" Margin="0,8,0,0">

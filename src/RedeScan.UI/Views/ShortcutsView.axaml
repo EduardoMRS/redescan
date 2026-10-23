@@ -1,5 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:RedeScan.UI.Controls"
+             xmlns:material="using:Material.Icons.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
@@ -10,9 +12,9 @@
 
     <DockPanel>
         <WrapPanel Classes="toolbar" DockPanel.Dock="Top">
-            <Button Content="➕ Adicionar" Command="{Binding AddShortcutCommand}" />
-            <Button Content="🗑 Remover" Command="{Binding RemoveShortcutCommand}" IsEnabled="{Binding HasSelection}" />
-            <Button Content="💾 Salvar" Command="{Binding SaveCommand}" />
+            <controls:IconButton Command="{Binding AddShortcutCommand}" Icon="Plus" Text="Adicionar"/>
+            <controls:IconButton Command="{Binding RemoveShortcutCommand}" IsEnabled="{Binding HasSelection}" Classes="danger" Icon="DeleteOutline" Text="Remover"/>
+            <controls:IconButton Command="{Binding SaveCommand}" Icon="ContentSave" Text="Salvar"/>
         </WrapPanel>
 
         <TextBlock DockPanel.Dock="Bottom" Classes="subtle" Text="{Binding Status}" Margin="0,8,0,0" />

@@ -1,5 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:RedeScan.UI.Controls"
+             xmlns:material="using:Material.Icons.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
@@ -37,20 +39,29 @@
                       DoubleTapped="OnHostDoubleTapped">
                 <DataGrid.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="🔬 Inspecionar (serviços, SO, MAC)"
+                        <MenuItem Header="Inspecionar (serviços, SO, MAC)"
                                   Command="{Binding InspectCommand}"
-                                  CommandParameter="{Binding SelectedHost}" />
-                        <MenuItem Header="⚡ Escanear portas"
+                                  CommandParameter="{Binding SelectedHost}">
+                            <MenuItem.Icon><material:MaterialIcon Kind="Microscope" /></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Escanear portas"
                                   Command="{Binding ScanPortsOfCommand}"
-                                  CommandParameter="{Binding SelectedHost}" />
-                        <MenuItem Header="📍 Ping"
+                                  CommandParameter="{Binding SelectedHost}">
+                            <MenuItem.Icon><material:MaterialIcon Kind="LightningBolt" /></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Ping"
                                   Command="{Binding PingHostCommand}"
-                                  CommandParameter="{Binding SelectedHost}" />
-                        <MenuItem Header="⏻ Wake-on-LAN"
+                                  CommandParameter="{Binding SelectedHost}">
+                            <MenuItem.Icon><material:MaterialIcon Kind="Pulse" /></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Wake-on-LAN"
                                   Command="{Binding WakeOnLanCommand}"
-                                  CommandParameter="{Binding SelectedHost}" />
+                                  CommandParameter="{Binding SelectedHost}">
+                            <MenuItem.Icon><material:MaterialIcon Kind="Power" /></MenuItem.Icon>
+                        </MenuItem>
                         <Separator />
-                        <MenuItem Header="🖥 Acesso remoto">
+                        <MenuItem Header="Acesso remoto">
+                            <MenuItem.Icon><material:MaterialIcon Kind="Monitor" /></MenuItem.Icon>
                             <MenuItem Header="SSH (terminal embutido)"
                                       Command="{Binding OpenSshEmbeddedCommand}"
                                       CommandParameter="{Binding SelectedHost}" />
@@ -140,16 +151,16 @@
                     <ScrollViewer>
                         <StackPanel Margin="0,8,0,0" Spacing="6">
                             <WrapPanel Classes="toolbar">
-                                <Button Content="🔬 Inspecionar"
+                                <controls:IconButton 
                                         Classes="accent"
                                         Command="{Binding InspectCommand}"
                                         CommandParameter="{Binding SelectedHost}"
-                                        IsVisible="{Binding !IsInspecting}" />
+                                        IsVisible="{Binding !IsInspecting}" Icon="Microscope" Text="Inspecionar"/>
                                 <ProgressBar IsIndeterminate="True" Width="90" VerticalAlignment="Center"
                                              IsVisible="{Binding IsInspecting}" />
-                                <Button Content="⏻ Wake-on-LAN"
+                                <controls:IconButton 
                                         Command="{Binding WakeOnLanCommand}"
-                                        CommandParameter="{Binding SelectedHost}" />
+                                        CommandParameter="{Binding SelectedHost}" Icon="Power" Text="Wake-on-LAN"/>
                             </WrapPanel>
 
                             <Border Classes="card" IsVisible="{Binding HostDetails, Converter={x:Static ObjectConverters.IsNotNull}}">

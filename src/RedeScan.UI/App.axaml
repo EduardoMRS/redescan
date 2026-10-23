@@ -43,6 +43,11 @@
                     <SolidColorBrush x:Key="RsHairline" Color="#2A313A" />
                     <Color x:Key="RsSidebarTop">#1A1F26</Color>
                     <Color x:Key="RsSidebarBottom">#12161B</Color>
+                    <SolidColorBrush x:Key="RsButtonBg" Color="#232A33" />
+                    <SolidColorBrush x:Key="RsButtonHover" Color="#2C3540" />
+                    <SolidColorBrush x:Key="RsInputBg" Color="#181D23" />
+                    <SolidColorBrush x:Key="RsDanger" Color="#F0646B" />
+                    <SolidColorBrush x:Key="RsDangerSoft" Color="#26F0646B" />
                 </ResourceDictionary>
 
                 <!-- ===== Tema Claro ===== -->
@@ -55,6 +60,11 @@
                     <SolidColorBrush x:Key="RsHairline" Color="#E2E6EA" />
                     <Color x:Key="RsSidebarTop">#FFFFFF</Color>
                     <Color x:Key="RsSidebarBottom">#EEF1F4</Color>
+                    <SolidColorBrush x:Key="RsButtonBg" Color="#EDF0F3" />
+                    <SolidColorBrush x:Key="RsButtonHover" Color="#E2E7EC" />
+                    <SolidColorBrush x:Key="RsInputBg" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="RsDanger" Color="#C8323A" />
+                    <SolidColorBrush x:Key="RsDangerSoft" Color="#1AC8323A" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
@@ -68,6 +78,7 @@
             </FluentTheme.Palettes>
         </FluentTheme>
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+        <StyleInclude Source="avares://Material.Icons.Avalonia/MaterialIconStyles.axaml" />
         <StyleInclude Source="avares://RedeScan.UI/Styles/AppStyles.axaml" />
     </Application.Styles>
 </Application>

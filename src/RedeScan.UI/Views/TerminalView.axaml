@@ -1,5 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:RedeScan.UI.Controls"
+             xmlns:material="using:Material.Icons.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
@@ -16,11 +18,11 @@
                 <TextBox Text="{Binding Username}" Width="120" Watermark="usuário" />
                 <TextBox Text="{Binding Password}" Width="130" Watermark="senha" PasswordChar="•"
                          KeyDown="OnPasswordKeyDown" />
-                <Button Content="🔌 Conectar" Classes="accent"
-                        Command="{Binding ConnectCommand}" IsVisible="{Binding IsDisconnected}" />
-                <Button Content="⏏ Desconectar"
-                        Command="{Binding DisconnectCommand}" IsVisible="{Binding IsConnected}" />
-                <Button Content="🧹 Limpar" Command="{Binding ClearOutputCommand}" />
+                <controls:IconButton Classes="accent"
+                        Command="{Binding ConnectCommand}" IsVisible="{Binding IsDisconnected}" Icon="LanConnect" Text="Conectar"/>
+                <controls:IconButton 
+                        Command="{Binding DisconnectCommand}" IsVisible="{Binding IsConnected}" Icon="LanDisconnect" Text="Desconectar"/>
+                <controls:IconButton Command="{Binding ClearOutputCommand}" Icon="Broom" Text="Limpar"/>
             </WrapPanel>
         </Border>
 

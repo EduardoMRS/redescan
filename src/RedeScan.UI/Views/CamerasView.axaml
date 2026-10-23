@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:material="using:Material.Icons.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
@@ -11,24 +12,24 @@
     <DockPanel>
         <!-- Barra de ações: quebra de linha em telas estreitas (nada fica fora da tela) -->
         <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
-            <Button Content="➕ Adicionar" Command="{Binding AddCameraCommand}" />
-            <Button Content="✏ Editar" Command="{Binding EditCameraCommand}"
-                    CommandParameter="{Binding SelectedItem}" IsEnabled="{Binding HasSelection}" />
-            <Button Content="🗑 Remover" Command="{Binding RemoveCameraCommand}"
-                    CommandParameter="{Binding SelectedItem}" IsEnabled="{Binding HasSelection}" />
-            <Button Content="💾 Salvar" Classes="accent" Command="{Binding SaveCommand}" />
-            <Button Content="📥 Importar rtspList.json" Click="OnImportClick" />
-            <Button Content="📤 Exportar" Click="OnExportClick" />
-            <Button Content="🖼 Atualizar prévias" Command="{Binding RefreshThumbnailsCommand}"
-                    IsEnabled="{Binding IsFfmpegAvailable}" />
+            <controls:IconButton Command="{Binding AddCameraCommand}" Icon="Plus" Text="Adicionar"/>
+            <controls:IconButton Command="{Binding EditCameraCommand}"
+                    CommandParameter="{Binding SelectedItem}" IsEnabled="{Binding HasSelection}" Icon="PencilOutline" Text="Editar"/>
+            <controls:IconButton Command="{Binding RemoveCameraCommand}"
+                    CommandParameter="{Binding SelectedItem}" IsEnabled="{Binding HasSelection}" Classes="danger" Icon="DeleteOutline" Text="Remover"/>
+            <controls:IconButton Classes="accent" Command="{Binding SaveCommand}" Icon="ContentSave" Text="Salvar"/>
+            <controls:IconButton Click="OnImportClick" Icon="Import" Text="Importar rtspList.json"/>
+            <controls:IconButton Click="OnExportClick" Icon="Export" Text="Exportar"/>
+            <controls:IconButton Command="{Binding RefreshThumbnailsCommand}"
+                    IsEnabled="{Binding IsFfmpegAvailable}" Icon="ImageRefresh" Text="Atualizar prévias"/>
         </WrapPanel>
 
         <!-- ffmpeg ausente: oferece instalar sem sair do app -->
         <Border DockPanel.Dock="Top" Classes="card warn" IsVisible="{Binding IsFfmpegMissing}">
             <DockPanel>
-                <Button DockPanel.Dock="Right" Classes="accent" VerticalAlignment="Center"
-                        Content="⬇ Instalar ffmpeg" Command="{Binding InstallFfmpegCommand}"
-                        IsEnabled="{Binding !IsInstallingFfmpeg}" />
+                <controls:IconButton DockPanel.Dock="Right" Classes="accent" VerticalAlignment="Center"
+                         Command="{Binding InstallFfmpegCommand}"
+                        IsEnabled="{Binding !IsInstallingFfmpeg}" Icon="Download" Text="Instalar ffmpeg"/>
                 <StackPanel Spacing="2" Margin="0,0,12,0">
                     <TextBlock FontWeight="SemiBold" Text="Decodificador de vídeo (ffmpeg) não encontrado" />
                     <TextBlock Classes="subtle" TextWrapping="Wrap"
@@ -46,13 +47,13 @@
             <Border Grid.Column="0" Classes="card" Padding="10" Margin="0">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
-                        <TextBox Text="{Binding SearchText}" Watermark="🔍 Buscar por nome ou local…" />
+                        <TextBox Text="{Binding SearchText}" Watermark="Buscar por nome ou local…" />
                         <ComboBox ItemsSource="{Binding AvailableGroups}"
                                   SelectedItem="{Binding GroupFilter}"
                                   HorizontalAlignment="Stretch" />
-                        <Button Content="▶ Reproduzir todas da lista" HorizontalAlignment="Stretch"
+                        <controls:IconButton HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Center"
-                                Command="{Binding PlayAllVisibleCommand}" />
+                                Command="{Binding PlayAllVisibleCommand}" Icon="Play" Text="Reproduzir todas da lista"/>
                     </StackPanel>
 
                     <ListBox ItemsSource="{Binding FilteredCameras}"
@@ -88,18 +89,26 @@
                         </ListBox.ItemTemplate>
                         <ListBox.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="▶ Reproduzir"
-                                          Command="{Binding PlaySelectedCommand}" />
-                                <MenuItem Header="✏ Editar"
+                                <MenuItem Header="Reproduzir"
+                                          Command="{Binding PlaySelectedCommand}">
+                                    <MenuItem.Icon><material:MaterialIcon Kind="Play" /></MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Editar"
                                           Command="{Binding EditCameraCommand}"
-                                          CommandParameter="{Binding SelectedItem}" />
-                                <MenuItem Header="↗ Abrir no player externo"
+                                          CommandParameter="{Binding SelectedItem}">
+                                    <MenuItem.Icon><material:MaterialIcon Kind="PencilOutline" /></MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Abrir no player externo"
                                           Command="{Binding OpenExternalCommand}"
-                                          CommandParameter="{Binding SelectedItem}" />
+                                          CommandParameter="{Binding SelectedItem}">
+                                    <MenuItem.Icon><material:MaterialIcon Kind="OpenInNew" /></MenuItem.Icon>
+                                </MenuItem>
                                 <Separator />
-                                <MenuItem Header="🗑 Remover"
+                                <MenuItem Header="Remover"
                                           Command="{Binding RemoveCameraCommand}"
-                                          CommandParameter="{Binding SelectedItem}" />
+                                          CommandParameter="{Binding SelectedItem}">
+                                    <MenuItem.Icon><material:MaterialIcon Kind="DeleteOutline" /></MenuItem.Icon>
+                                </MenuItem>
                             </ContextMenu>
                         </ListBox.ContextMenu>
                     </ListBox>
@@ -114,9 +123,9 @@
                     <TextBlock Text="Layout:" VerticalAlignment="Center" Classes="subtle" />
                     <ComboBox ItemsSource="{Binding LayoutOptions}"
                               SelectedItem="{Binding VideoLayout}" Width="80" />
-                    <Button Content="▶ Reproduzir selecionada" Command="{Binding PlaySelectedCommand}"
-                            IsEnabled="{Binding HasSelection}" />
-                    <Button Content="⏹ Parar tudo" Command="{Binding StopAllCommand}" />
+                    <controls:IconButton Command="{Binding PlaySelectedCommand}"
+                            IsEnabled="{Binding HasSelection}" Icon="Play" Text="Reproduzir selecionada"/>
+                    <controls:IconButton Command="{Binding StopAllCommand}" Icon="Stop" Text="Parar tudo"/>
                 </WrapPanel>
 
                 <Border Classes="card" Padding="6" Margin="0">
@@ -145,10 +154,10 @@
                                                 <TextBlock Grid.Column="0" Text="{Binding Camera.Name, FallbackValue='', TargetNullValue=''}"
                                                            FontWeight="SemiBold" VerticalAlignment="Center"
                                                            TextTrimming="CharacterEllipsis" />
-                                                <Button Grid.Column="1" Content="⏹" Padding="6,2"
+                                                <controls:IconButton Grid.Column="1"  Padding="6,2"
                                                         ToolTip.Tip="Parar este slot"
                                                         Command="{Binding $parent[ItemsControl].((vm:CamerasViewModel)DataContext).StopSlotCommand}"
-                                                        CommandParameter="{Binding}" />
+                                                        CommandParameter="{Binding}" Icon="Stop"/>
                                             </Grid>
                                         </Border>
                                     </Grid>

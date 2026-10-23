@@ -146,6 +146,7 @@ public partial class CamerasViewModel : ViewModelBase
         _video = video;
         _tools = tools;
         IsFfmpegAvailable = _video.IsAvailable;
+        AvailableGroups.Add(AllGroups);
         RebuildSlots();
     }
 
