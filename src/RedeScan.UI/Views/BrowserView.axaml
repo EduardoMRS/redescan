@@ -1,5 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:RedeScan.UI.Controls"
+             xmlns:material="using:Material.Icons.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
@@ -13,27 +15,27 @@
         <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,10" Padding="8">
             <Grid ColumnDefinitions="Auto,*,Auto">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" Margin="0,0,6,0">
-                    <Button Content="◀" ToolTip.Tip="Voltar" Command="{Binding BackCommand}" />
-                    <Button Content="▶" ToolTip.Tip="Avançar" Command="{Binding ForwardCommand}" />
-                    <Button Content="⟳" ToolTip.Tip="Recarregar" Command="{Binding ReloadCommand}" />
+                    <controls:IconButton ToolTip.Tip="Voltar" Command="{Binding BackCommand}" Icon="ArrowLeft"/>
+                    <controls:IconButton ToolTip.Tip="Avançar" Command="{Binding ForwardCommand}" Icon="Play"/>
+                    <controls:IconButton ToolTip.Tip="Recarregar" Command="{Binding ReloadCommand}" Icon="Refresh"/>
                 </StackPanel>
                 <TextBox Grid.Column="1" Text="{Binding Address}" Watermark="https://…"
                          VerticalAlignment="Center" CornerRadius="8" MinWidth="160"
                          KeyDown="OnAddressKeyDown" />
                 <WrapPanel Grid.Column="2" Classes="toolbar inline" Margin="6,0,0,0">
-                    <Button Content="➜ Ir" Classes="accent" Command="{Binding NavigateCommand}" />
+                    <controls:IconButton Classes="accent" Command="{Binding NavigateCommand}" Icon="ArrowRight" Text="Ir"/>
                     <ComboBox ItemsSource="{Binding Routers}"
                               SelectedItem="{Binding SelectedRouter}"
                               Width="200" VerticalAlignment="Center"
-                              PlaceholderText="🖧 Roteadores da rede…">
+                              PlaceholderText="Roteadores da rede…">
                         <ComboBox.ItemTemplate>
                             <DataTemplate x:DataType="models:WebDevice">
                                 <TextBlock Text="{Binding DisplayLabel}" TextTrimming="CharacterEllipsis" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                    <Button Content="↗" ToolTip.Tip="Abrir no navegador do sistema"
-                            Command="{Binding OpenInSystemBrowserCommand}" />
+                    <controls:IconButton ToolTip.Tip="Abrir no navegador do sistema"
+                            Command="{Binding OpenInSystemBrowserCommand}" Icon="OpenInNew"/>
                 </WrapPanel>
             </Grid>
         </Border>

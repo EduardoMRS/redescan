@@ -1,5 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:RedeScan.UI.Controls"
+             xmlns:material="using:Material.Icons.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
@@ -16,8 +18,8 @@
                 <Grid ColumnDefinitions="110,*,Auto">
                     <TextBlock Grid.Column="0" Text="Pasta raiz" VerticalAlignment="Center" />
                     <TextBox Grid.Column="1" Text="{Binding RootDirectory}" IsEnabled="{Binding IsStopped}" />
-                    <Button Grid.Column="2" Content="📁 Escolher" Margin="8,0,0,0"
-                            Click="OnChooseFolder" IsEnabled="{Binding IsStopped}" />
+                    <controls:IconButton Grid.Column="2"  Margin="8,0,0,0"
+                            Click="OnChooseFolder" IsEnabled="{Binding IsStopped}" Icon="Folder" Text="Escolher"/>
                 </Grid>
 
                 <WrapPanel Classes="toolbar">
@@ -29,10 +31,10 @@
                 </WrapPanel>
 
                 <WrapPanel Classes="toolbar">
-                    <Button Content="▶ Iniciar servidor" Classes="accent"
-                            Command="{Binding StartCommand}" IsVisible="{Binding IsStopped}" />
-                    <Button Content="⏹ Parar" Command="{Binding StopCommand}" IsVisible="{Binding IsRunning}" />
-                    <Button Content="🧹 Limpar log" Command="{Binding ClearLogCommand}" />
+                    <controls:IconButton Classes="accent"
+                            Command="{Binding StartCommand}" IsVisible="{Binding IsStopped}" Icon="Play" Text="Iniciar servidor"/>
+                    <controls:IconButton Command="{Binding StopCommand}" IsVisible="{Binding IsRunning}" Icon="Stop" Text="Parar"/>
+                    <controls:IconButton Command="{Binding ClearLogCommand}" Icon="Broom" Text="Limpar log"/>
                 </WrapPanel>
             </StackPanel>
         </Border>

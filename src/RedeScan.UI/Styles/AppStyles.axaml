@@ -78,10 +78,16 @@
     </Style>
 
     <Style Selector="ListBox.nav ListBoxItem:selected /template/ ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource RsAccent}" />
+        <Setter Property="Background" Value="{DynamicResource RsAccentSoft}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource RsAccent}" />
+        <Setter Property="BorderThickness" Value="3,0,0,0" />
     </Style>
     <Style Selector="ListBox.nav ListBoxItem:selected">
-        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Foreground" Value="{DynamicResource RsAccent}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="ListBox.nav ListBoxItem:selected:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource RsAccentSoft}" />
     </Style>
 
     <!-- Botão estilo nav (rodapé: alternar tema) -->
@@ -97,10 +103,13 @@
         <Setter Property="Background" Value="{DynamicResource RsAccentSoft}" />
     </Style>
     <Style Selector="Button.nav.active /template/ ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource RsAccent}" />
+        <Setter Property="Background" Value="{DynamicResource RsAccentSoft}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource RsAccent}" />
+        <Setter Property="BorderThickness" Value="3,0,0,0" />
     </Style>
     <Style Selector="Button.nav.active">
-        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Foreground" Value="{DynamicResource RsAccent}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
 
     <!-- ===================== Barras de ferramentas responsivas =====================
@@ -113,11 +122,11 @@
     <Style Selector="WrapPanel.toolbar.inline">
         <Setter Property="Margin" Value="0" />
     </Style>
-    <Style Selector="WrapPanel.toolbar > Control">
+    <Style Selector="WrapPanel.toolbar > :is(Control)">
         <Setter Property="Margin" Value="0,0,8,6" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
-    <Style Selector="WrapPanel.toolbar.inline > Control">
+    <Style Selector="WrapPanel.toolbar.inline > :is(Control)">
         <Setter Property="Margin" Value="0,2,6,2" />
     </Style>
 
@@ -141,19 +150,63 @@
     </Style>
 
     <!-- ===================== Botões ===================== -->
+    <!-- Padrão: botão neutro discreto, com borda sutil -->
     <Style Selector="Button">
         <Setter Property="CornerRadius" Value="8" />
-        <Setter Property="Padding" Value="14,8" />
+        <Setter Property="Padding" Value="12,7" />
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="Background" Value="{DynamicResource RsButtonBg}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource RsHairline}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Button:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource RsButtonHover}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource RsAccent}" />
+    </Style>
+    <Style Selector="Button:disabled /template/ ContentPresenter">
+        <Setter Property="Opacity" Value="0.45" />
     </Style>
 
+    <!-- Ação principal -->
     <Style Selector="Button.accent">
         <Setter Property="Background" Value="{DynamicResource RsAccent}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource RsAccent}" />
         <Setter Property="Foreground" Value="White" />
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style Selector="Button.accent:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource RsAccentHover}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource RsAccentHover}" />
         <Setter Property="Foreground" Value="White" />
+    </Style>
+
+    <!-- Ação destrutiva (remover) -->
+    <Style Selector="Button.danger">
+        <Setter Property="Foreground" Value="{DynamicResource RsDanger}" />
+    </Style>
+    <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource RsDangerSoft}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource RsDanger}" />
+        <Setter Property="Foreground" Value="{DynamicResource RsDanger}" />
+    </Style>
+
+    <!-- Botões da navegação não usam o visual "neutro" -->
+    <Style Selector="Button.nav">
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+    <!-- ===================== Campos ===================== -->
+    <Style Selector="TextBox, ComboBox, NumericUpDown">
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="MinHeight" Value="34" />
+    </Style>
+    <Style Selector="TextBox">
+        <Setter Property="Background" Value="{DynamicResource RsInputBg}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource RsHairline}" />
+    </Style>
+    <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{DynamicResource RsAccent}" />
     </Style>
 
     <!-- ===================== DataGrid ===================== -->

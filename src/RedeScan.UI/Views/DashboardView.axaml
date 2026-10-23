@@ -1,5 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:RedeScan.UI.Controls"
+             xmlns:material="using:Material.Icons.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
@@ -18,7 +20,7 @@
                     <TextBlock Grid.Column="1" Text="{Binding UpdateMessage}" VerticalAlignment="Center" TextWrapping="Wrap" />
                     <Button Grid.Column="2" Content="Baixar" Classes="accent" Margin="0,0,6,0"
                             Command="{Binding DownloadUpdateCommand}" />
-                    <Button Grid.Column="3" Content="✕" Command="{Binding DismissUpdateCommand}" />
+                    <controls:IconButton Grid.Column="3"  Command="{Binding DismissUpdateCommand}" Icon="Close"/>
                 </Grid>
             </Border>
 
@@ -49,7 +51,7 @@
                 </ItemsControl>
             </Border>
 
-            <Button Content="🔄 Atualizar" Command="{Binding RefreshCommand}" HorizontalAlignment="Left" />
+            <controls:IconButton Command="{Binding RefreshCommand}" HorizontalAlignment="Left" Icon="Refresh" Text="Atualizar"/>
 
             <!-- ===== Atalhos: dispositivos com interface web ===== -->
             <Grid ColumnDefinitions="*,Auto" Margin="0,16,0,0">
@@ -59,9 +61,9 @@
                                  IsVisible="{Binding IsDiscovering}" />
                     <CheckBox Content="Auto" IsChecked="{Binding AutoDiscoveryEnabled}"
                               VerticalAlignment="Center" ToolTip.Tip="Verificar a rede automaticamente" />
-                    <Button Content="🔎 Procurar" Command="{Binding DiscoverCommand}"
-                            IsEnabled="{Binding !IsDiscovering}" />
-                    <Button Content="🌐 Roteadores" Command="{Binding FindRoutersCommand}" />
+                    <controls:IconButton Command="{Binding DiscoverCommand}"
+                            IsEnabled="{Binding !IsDiscovering}" Icon="Magnify" Text="Procurar"/>
+                    <controls:IconButton Command="{Binding FindRoutersCommand}" Icon="Web" Text="Roteadores"/>
                 </StackPanel>
             </Grid>
 
@@ -85,10 +87,10 @@
                                                 Classes="accent" Margin="0,0,6,0"
                                                 Command="{Binding $parent[ItemsControl].((vm:DashboardViewModel)DataContext).OpenDeviceInternalCommand}"
                                                 CommandParameter="{Binding}" />
-                                        <Button Grid.Column="3" Content="↗"
+                                        <controls:IconButton Grid.Column="3" 
                                                 ToolTip.Tip="Abrir no navegador do sistema"
                                                 Command="{Binding $parent[ItemsControl].((vm:DashboardViewModel)DataContext).OpenDeviceSystemCommand}"
-                                                CommandParameter="{Binding}" />
+                                                CommandParameter="{Binding}" Icon="OpenInNew"/>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

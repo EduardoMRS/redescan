@@ -1,5 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:RedeScan.UI.Controls"
+             xmlns:material="using:Material.Icons.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
@@ -10,7 +12,7 @@
 
     <DockPanel>
         <WrapPanel Classes="toolbar" DockPanel.Dock="Top">
-            <Button Content="📶 Escanear" Command="{Binding ScanCommand}" IsEnabled="{Binding !IsScanning}" />
+            <controls:IconButton Command="{Binding ScanCommand}" IsEnabled="{Binding !IsScanning}" Icon="Wifi" Text="Escanear"/>
             <ProgressBar IsIndeterminate="True" Width="120" IsVisible="{Binding IsScanning}" VerticalAlignment="Center" />
         </WrapPanel>
 

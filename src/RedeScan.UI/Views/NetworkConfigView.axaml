@@ -1,5 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:RedeScan.UI.Controls"
+             xmlns:material="using:Material.Icons.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
@@ -43,8 +45,8 @@
                             </Grid>
                         </StackPanel>
                         <WrapPanel Classes="toolbar">
-                            <Button Content="👁 Pré-visualizar" Command="{Binding PreviewIpCommand}" />
-                            <Button Content="✓ Aplicar IP" Classes="accent" Command="{Binding ApplyIpCommand}" />
+                            <controls:IconButton Command="{Binding PreviewIpCommand}" Icon="EyeOutline" Text="Pré-visualizar"/>
+                            <controls:IconButton Classes="accent" Command="{Binding ApplyIpCommand}" Icon="Check" Text="Aplicar IP"/>
                         </WrapPanel>
                     </StackPanel>
                 </Border>
@@ -54,8 +56,8 @@
                 <Border Classes="card">
                     <StackPanel Spacing="8">
                         <TextBox Text="{Binding DnsServers}" Watermark="8.8.8.8, 1.1.1.1" />
-                        <Button Content="✓ Aplicar DNS" Classes="accent" Command="{Binding ApplyDnsCommand}"
-                                HorizontalAlignment="Left" />
+                        <controls:IconButton Classes="accent" Command="{Binding ApplyDnsCommand}"
+                                HorizontalAlignment="Left" Icon="Check" Text="Aplicar DNS"/>
                     </StackPanel>
                 </Border>
 
@@ -72,8 +74,8 @@
                             <TextBox Grid.Column="1" Text="{Binding PppoePassword}" PasswordChar="•" />
                         </Grid>
                         <WrapPanel Classes="toolbar">
-                            <Button Content="👁 Pré-visualizar" Command="{Binding PreviewPppoeCommand}" />
-                            <Button Content="✓ Conectar PPPoE" Classes="accent" Command="{Binding ApplyPppoeCommand}" />
+                            <controls:IconButton Command="{Binding PreviewPppoeCommand}" Icon="EyeOutline" Text="Pré-visualizar"/>
+                            <controls:IconButton Classes="accent" Command="{Binding ApplyPppoeCommand}" Icon="Check" Text="Conectar PPPoE"/>
                         </WrapPanel>
                     </StackPanel>
                 </Border>
@@ -111,8 +113,8 @@
                             </Grid>
                         </StackPanel>
                         <WrapPanel Classes="toolbar">
-                            <Button Content="👁 Pré-visualizar" Command="{Binding PreviewVlanCommand}" />
-                            <Button Content="✓ Criar VLAN" Classes="accent" Command="{Binding ApplyVlanCommand}" />
+                            <controls:IconButton Command="{Binding PreviewVlanCommand}" Icon="EyeOutline" Text="Pré-visualizar"/>
+                            <controls:IconButton Classes="accent" Command="{Binding ApplyVlanCommand}" Icon="Check" Text="Criar VLAN"/>
                         </WrapPanel>
                         <TextBlock Classes="subtle" FontSize="10" TextWrapping="Wrap"
                                    Text="No Linux cria a VLAN via nmcli (NetworkManager). No Windows, VLANs dependem da ferramenta do fabricante da placa — a pré-visualização mostra as instruções." />
