@@ -213,4 +213,4 @@ RedeScan/
 - [x] **Botões fora da tela:** barras de ferramentas viraram `WrapPanel.toolbar` (quebram linha em janelas estreitas).
 - [x] **Instaladores Full baixam dependências:** .deb (`Depends`: WebKitGTK, GTK3, ffmpeg, iproute2), .rpm (`Requires`), setup.exe (WebView2 + ffmpeg via página de download do Inno). Validados em Ubuntu 22.04/24.04 e Fedora 40.
 - [x] **Log de falhas:** `AppLog` grava em `logs/` na pasta do app (fallback no perfil), arquivo por usuário, `crash-*.log` em exceções não tratadas, espelhado no console (`redescan --verbose`, `sudo redescan`; no Windows anexa ao console do terminal).
-- [ ] **Repaginação do layout (ícones/botões):** em andamento na branch `redesign/ui`.
+- [x] **Repaginação do layout (v1.0.4):** ícones vetoriais (Material.Icons.Avalonia 2.4.1) no lugar dos emojis, `IconButton`, ícone por módulo, botões neutro/accent/danger, menu com barra de destaque, campos padronizados (PR #4).
