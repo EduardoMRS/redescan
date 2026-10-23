@@ -142,7 +142,7 @@
                                         <Border Grid.Row="1" Background="#40000000" Padding="8,4"
                                                 IsVisible="{Binding HasCamera}">
                                             <Grid ColumnDefinitions="*,Auto">
-                                                <TextBlock Grid.Column="0" Text="{Binding Camera.Name}"
+                                                <TextBlock Grid.Column="0" Text="{Binding Camera.Name, FallbackValue='', TargetNullValue=''}"
                                                            FontWeight="SemiBold" VerticalAlignment="Center"
                                                            TextTrimming="CharacterEllipsis" />
                                                 <Button Grid.Column="1" Content="⏹" Padding="6,2"

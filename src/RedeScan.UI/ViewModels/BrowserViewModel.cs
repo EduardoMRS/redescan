@@ -13,7 +13,8 @@ public enum BrowserAction
     Back,
     Forward,
     Reload,
-    Recreate
+    Recreate,
+    ShowWindow
 }
 
 /// <summary>
@@ -55,6 +56,25 @@ public partial class BrowserViewModel : ViewModelBase
     [ObservableProperty] private bool _ignoreCertificateErrors;
 
     public bool IsWebViewUnavailable => !IsWebViewAvailable;
+
+    /// <summary>
+    /// True quando o motor do sistema não suporta ser embutido (WebKitGTK no
+    /// Linux) e a página é exibida numa janela própria, acoplada sobre esta área.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowWindowHint))]
+    private bool _isWindowMode;
+
+    /// <summary>A janela do navegador está aberta (modo janela).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowWindowHint))]
+    private bool _isWindowOpen;
+
+    /// <summary>Mostra o aviso "janela fechada — reabrir" no modo janela.</summary>
+    public bool ShowWindowHint => IsWindowMode && !IsWindowOpen;
+
+    [RelayCommand]
+    private void ShowWindow() => ActionRequested?.Invoke(BrowserAction.ShowWindow);
 
     /// <summary>Roteadores/dispositivos web descobertos na rede, para o seletor.</summary>
     public ReadOnlyObservableCollection<WebDevice> Routers { get; }

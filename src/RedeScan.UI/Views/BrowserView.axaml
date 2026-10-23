@@ -59,6 +59,17 @@
         <!-- Host do conteúdo web (preenchido no code-behind) + fallback -->
         <Border Classes="card" Padding="0" Margin="0" ClipToBounds="True">
             <Panel Name="BrowserHost">
+                <!-- Modo janela (Linux/WebKitGTK): a página fica numa janela acoplada sobre esta área -->
+                <Border Padding="24" IsVisible="{Binding ShowWindowHint}">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12" MaxWidth="520">
+                        <TextBlock Classes="h2" HorizontalAlignment="Center" TextAlignment="Center"
+                                   Text="A janela do navegador foi fechada" />
+                        <TextBlock Classes="subtle" TextWrapping="Wrap" TextAlignment="Center"
+                                   Text="No Linux o motor web do sistema (WebKitGTK) não pode ser desenhado dentro da janela do app, então as páginas abrem numa janela do RedeScan encaixada sobre esta área. Use a barra de endereço acima normalmente." />
+                        <Button Content="Reabrir janela do navegador" Classes="accent" HorizontalAlignment="Center"
+                                Command="{Binding ShowWindowCommand}" />
+                    </StackPanel>
+                </Border>
                 <Border Name="Fallback" Padding="24" IsVisible="{Binding IsWebViewUnavailable}">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12" MaxWidth="560">
                         <Border Classes="pageIcon" Width="64" Height="64" HorizontalAlignment="Center">

@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
 using Avalonia.Threading;
@@ -12,22 +12,44 @@ using RedeScan.UI.ViewModels;
 namespace RedeScan.UI.Views;
 
 /// <summary>
-/// Navegador embutido. No desktop usa o <see cref="NativeWebView"/> do Avalonia
-/// (WebView2 no Windows, WebKitGTK no Linux — o motor do próprio sistema, sem
-/// embutir Chromium). No Android usa a fábrica nativa registrada pelo head.
+/// Navegador embutido usando o motor web do sistema (sem Chromium empacotado):
+/// <list type="bullet">
+/// <item>Windows (WebView2) e WPE no Linux: controle embutido (<see cref="NativeWebView"/>).</item>
+/// <item>Linux com WebKitGTK: o adaptador só suporta janela própria
+/// (<c>SupportedScenarios = NativeDialog</c>), então a página abre num
+/// <see cref="NativeWebDialog"/> encaixado sobre a área do navegador e que
+/// acompanha a janela principal ao mover/redimensionar.</item>
+/// <item>Android: fábrica nativa registrada pelo head.</item>
+/// </list>
 /// </summary>
 public partial class BrowserView : UserControl
 {
     private BrowserViewModel? _vm;
     private NativeWebView? _webView;
+    private NativeWebDialog? _dialog;
     private INativeWebView? _platformWebView;
     private GLibIdle? _tlsIdle;
+    private Window? _ownerWindow;
+    private bool _attached;
 
     public BrowserView()
     {
         InitializeComponent();
         DataContextChanged += (_, _) => Bind(DataContext as BrowserViewModel);
-        AttachedToVisualTree += (_, _) => EnsureEngine();
+        AttachedToVisualTree += (_, _) =>
+        {
+            _attached = true;
+            HookOwnerWindow();
+            EnsureEngine();
+        };
+        DetachedFromVisualTree += (_, _) =>
+        {
+            _attached = false;
+            UnhookOwnerWindow();
+            // A janela acoplada não pode ficar flutuando quando o usuário sai da tela.
+            CloseDialog();
+        };
+        Host.SizeChanged += (_, _) => AlignDialog();
     }
 
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
@@ -54,37 +76,52 @@ public partial class BrowserView : UserControl
     // ------------------------------------------------------------ motor
     private void EnsureEngine()
     {
-        if (_vm is null || VisualRoot is null || _webView is not null || _platformWebView is not null)
+        if (_vm is null || !_attached || _webView is not null || _dialog is not null || _platformWebView is not null)
         {
             return;
         }
 
-        // Android (ou outro head) com WebView nativo próprio.
         if (App.NativeWebViewFactory is not null)
         {
-            try
-            {
-                _platformWebView = App.NativeWebViewFactory();
-                Host.Children.Insert(0, _platformWebView.Control);
-                _vm.IsWebViewAvailable = true;
-                _platformWebView.Navigate(_vm.CurrentUrl);
-            }
-            catch (Exception ex)
-            {
-                AppLog.Error("WebView da plataforma falhou", ex);
-                SetUnavailable("Não foi possível iniciar o WebView do sistema: " + ex.Message);
-            }
-
+            CreatePlatformWebView();
             return;
         }
 
-        var reason = CheckDesktopEngine();
+        var (reason, embeddable) = CheckDesktopEngine();
         if (reason is not null)
         {
             SetUnavailable(reason);
             return;
         }
 
+        if (embeddable)
+        {
+            CreateEmbedded();
+        }
+        else
+        {
+            CreateDialog();
+        }
+    }
+
+    private void CreatePlatformWebView()
+    {
+        try
+        {
+            _platformWebView = App.NativeWebViewFactory!();
+            Host.Children.Insert(0, _platformWebView.Control);
+            _vm!.IsWebViewAvailable = true;
+            _platformWebView.Navigate(_vm.CurrentUrl);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("WebView da plataforma falhou", ex);
+            SetUnavailable("Não foi possível iniciar o WebView do sistema: " + ex.Message);
+        }
+    }
+
+    private void CreateEmbedded()
+    {
         try
         {
             var web = new NativeWebView();
@@ -95,52 +132,99 @@ public partial class BrowserView : UserControl
             web.NewWindowRequested += OnNewWindowRequested;
             _webView = web;
             Host.Children.Insert(0, web);
-            _vm.IsWebViewAvailable = true;
+            _vm!.IsWebViewAvailable = true;
+            _vm.IsWindowMode = false;
             Navigate(_vm.CurrentUrl);
         }
         catch (Exception ex)
         {
             AppLog.Error("Falha ao criar o navegador embutido", ex);
-            DestroyEngine();
+            DestroyEmbedded();
             SetUnavailable("O motor web do sistema não iniciou: " + ex.Message);
         }
     }
 
-    /// <summary>Confere se o motor do sistema está instalado; devolve o motivo se não.</summary>
-    private static string? CheckDesktopEngine()
+    private void CreateDialog()
     {
+        try
+        {
+            var dlg = new NativeWebDialog { Title = "RedeScan — Navegador", CanUserResize = true };
+            dlg.EnvironmentRequested += OnEnvironmentRequested;
+            dlg.AdapterCreated += OnAdapterCreated;
+            dlg.NavigationStarted += OnNavigationStarted;
+            dlg.NavigationCompleted += OnNavigationCompleted;
+            dlg.NewWindowRequested += OnNewWindowRequested;
+            dlg.Closing += OnDialogClosing;
+            _dialog = dlg;
+
+            if (TopLevel.GetTopLevel(this) is { } top)
+            {
+                dlg.Show(top); // fica à frente da janela principal
+            }
+            else
+            {
+                dlg.Show();
+            }
+
+            _vm!.IsWebViewAvailable = true;
+            _vm.IsWindowMode = true;
+            _vm.IsWindowOpen = true;
+            AlignDialog();
+            Navigate(_vm.CurrentUrl);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Falha ao abrir a janela do navegador", ex);
+            CloseDialog();
+            SetUnavailable("O motor web do sistema não iniciou: " + ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Confere o motor do sistema. Devolve o motivo se estiver indisponível e se
+    /// ele pode ser embutido no layout (senão, usa janela acoplada).
+    /// </summary>
+    private static (string? Reason, bool Embeddable) CheckDesktopEngine()
+    {
+        const WebViewEmbeddingScenario embedded =
+            WebViewEmbeddingScenario.NativeControlHost | WebViewEmbeddingScenario.OffscreenRenderer;
         try
         {
             if (OperatingSystem.IsWindows())
             {
                 var info = WebViewAdapterInfo.GetAdapterInfo(WebViewAdapterType.WebView2);
                 return info.IsInstalled
-                    ? null
-                    : "O Microsoft Edge WebView2 Runtime não está instalado. O instalador Full do RedeScan o instala; " +
-                      "na versão portátil, baixe em https://go.microsoft.com/fwlink/p/?LinkId=2124703.";
+                    ? (null, true)
+                    : ("O Microsoft Edge WebView2 Runtime não está instalado. O instalador Full do RedeScan o instala; " +
+                       "na versão portátil, baixe em https://go.microsoft.com/fwlink/p/?LinkId=2124703.", false);
             }
 
             if (OperatingSystem.IsLinux())
             {
-                var gtk = WebViewAdapterInfo.GetAdapterInfo(WebViewAdapterType.WebKitGtk);
                 var wpe = WebViewAdapterInfo.GetAdapterInfo(WebViewAdapterType.WpeWebKit);
-                if (gtk.IsInstalled || wpe.IsInstalled)
+                if (wpe.IsInstalled && (wpe.SupportedScenarios & embedded) != 0)
                 {
-                    return null;
+                    return (null, true);
                 }
 
-                return "O WebKitGTK não está instalado. Instale com:\n" +
-                       "Ubuntu/Mint/Debian: sudo apt install libwebkit2gtk-4.1-0\n" +
-                       "Fedora: sudo dnf install webkit2gtk4.1\n" +
-                       "(os pacotes .deb/.rpm do RedeScan já instalam automaticamente)";
+                var gtk = WebViewAdapterInfo.GetAdapterInfo(WebViewAdapterType.WebKitGtk);
+                if (gtk.IsInstalled)
+                {
+                    return (null, (gtk.SupportedScenarios & embedded) != 0);
+                }
+
+                return ("O WebKitGTK não está instalado. Instale com:\n" +
+                        "Ubuntu/Mint/Debian: sudo apt install libwebkit2gtk-4.1-0\n" +
+                        "Fedora: sudo dnf install webkit2gtk4.1\n" +
+                        "(os pacotes .deb/.rpm do RedeScan já instalam automaticamente)", false);
             }
 
-            return null; // macOS: WKWebView sempre presente
+            return (null, true); // macOS: WKWebView sempre presente e embutível
         }
         catch (Exception ex)
         {
             AppLog.Warn($"Detecção do motor web falhou: {ex.Message}");
-            return null; // tenta assim mesmo
+            return (null, true);
         }
     }
 
@@ -149,26 +233,151 @@ public partial class BrowserView : UserControl
         if (_vm is not null)
         {
             _vm.IsWebViewAvailable = false;
+            _vm.IsWindowMode = false;
             _vm.UnavailableReason = reason;
         }
 
         AppLog.Warn("Navegador embutido indisponível: " + reason.Replace('\n', ' '));
     }
 
-    private void DestroyEngine()
+    private void DestroyEmbedded()
     {
-        if (_webView is not null)
+        if (_webView is null)
         {
-            _webView.EnvironmentRequested -= OnEnvironmentRequested;
-            _webView.AdapterCreated -= OnAdapterCreated;
-            _webView.NavigationStarted -= OnNavigationStarted;
-            _webView.NavigationCompleted -= OnNavigationCompleted;
-            _webView.NewWindowRequested -= OnNewWindowRequested;
-            Host.Children.Remove(_webView);
-            _webView = null;
+            return;
+        }
+
+        _webView.EnvironmentRequested -= OnEnvironmentRequested;
+        _webView.AdapterCreated -= OnAdapterCreated;
+        _webView.NavigationStarted -= OnNavigationStarted;
+        _webView.NavigationCompleted -= OnNavigationCompleted;
+        _webView.NewWindowRequested -= OnNewWindowRequested;
+        Host.Children.Remove(_webView);
+        _webView = null;
+    }
+
+    private void CloseDialog()
+    {
+        var dlg = _dialog;
+        _dialog = null;
+        if (dlg is null)
+        {
+            return;
+        }
+
+        dlg.Closing -= OnDialogClosing;
+        dlg.EnvironmentRequested -= OnEnvironmentRequested;
+        dlg.AdapterCreated -= OnAdapterCreated;
+        dlg.NavigationStarted -= OnNavigationStarted;
+        dlg.NavigationCompleted -= OnNavigationCompleted;
+        dlg.NewWindowRequested -= OnNewWindowRequested;
+        try
+        {
+            dlg.Close();
+            dlg.Dispose();
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn("Erro ao fechar a janela do navegador: " + ex.Message);
+        }
+
+        if (_vm is not null)
+        {
+            _vm.IsWindowOpen = false;
         }
     }
 
+    /// <summary>O usuário fechou a janela do navegador pelo "X".</summary>
+    private void OnDialogClosing(object? sender, EventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (ReferenceEquals(sender, _dialog))
+            {
+                _dialog = null;
+                if (_vm is not null)
+                {
+                    _vm.IsWindowOpen = false;
+                    _vm.IsLoading = false;
+                }
+            }
+        });
+    }
+
+    // ----------------------------------------- janela acoplada (Linux)
+    private void HookOwnerWindow()
+    {
+        _ownerWindow = TopLevel.GetTopLevel(this) as Window;
+        if (_ownerWindow is not null)
+        {
+            _ownerWindow.PositionChanged += OnOwnerMoved;
+            _ownerWindow.PropertyChanged += OnOwnerPropertyChanged;
+        }
+    }
+
+    private void UnhookOwnerWindow()
+    {
+        if (_ownerWindow is not null)
+        {
+            _ownerWindow.PositionChanged -= OnOwnerMoved;
+            _ownerWindow.PropertyChanged -= OnOwnerPropertyChanged;
+            _ownerWindow = null;
+        }
+    }
+
+    private void OnOwnerMoved(object? sender, PixelPointEventArgs e) => AlignDialog();
+
+    private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == Window.WindowStateProperty)
+        {
+            // Minimizou a janela principal: fecha a do navegador junto; ao
+            // restaurar, reabre na mesma URL.
+            if (e.NewValue is WindowState.Minimized)
+            {
+                CloseDialog();
+            }
+            else if (_vm?.IsWindowMode == true && _dialog is null && _attached)
+            {
+                CreateDialog();
+            }
+            else
+            {
+                AlignDialog();
+            }
+        }
+    }
+
+    /// <summary>Encaixa a janela do navegador exatamente sobre a área do navegador no app.</summary>
+    private void AlignDialog()
+    {
+        if (_dialog is null || !_attached || Host.Bounds.Width < 10 || Host.Bounds.Height < 10)
+        {
+            return;
+        }
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            try
+            {
+                if (_dialog is null || TopLevel.GetTopLevel(this) is not { } top)
+                {
+                    return;
+                }
+
+                var origin = Host.PointToScreen(new Point(0, 0));
+                var scale = top.RenderScaling;
+                _dialog.Move(origin.X, origin.Y);
+                _dialog.Resize((int)(Host.Bounds.Width * scale), (int)(Host.Bounds.Height * scale));
+            }
+            catch (Exception ex)
+            {
+                AppLog.Debug("Não foi possível alinhar a janela do navegador: " + ex.Message);
+            }
+        }, DispatcherPriority.Background);
+    }
+
+    // ------------------------------------------------------ ambiente
     private void OnEnvironmentRequested(object? sender, WebViewEnvironmentRequestedEventArgs e)
     {
         var ignoreCerts = _vm?.IgnoreCertificateErrors == true;
@@ -192,9 +401,11 @@ public partial class BrowserView : UserControl
 
     private void OnAdapterCreated(object? sender, WebViewAdapterEventArgs e)
     {
-        AppLog.Info($"Navegador embutido: {_webView?.AdapterInfo}");
-        if (_vm?.IgnoreCertificateErrors == true &&
-            _webView?.TryGetPlatformHandle() is IGtkWebViewPlatformHandle gtk)
+        var info = _webView?.AdapterInfo;
+        AppLog.Info($"Navegador: {(_dialog is not null ? "janela acoplada" : "embutido")} {info}");
+
+        var handle = _webView?.TryGetPlatformHandle() ?? _dialog?.TryGetWebViewPlatformHandle();
+        if (_vm?.IgnoreCertificateErrors == true && handle is IGtkWebViewPlatformHandle gtk)
         {
             // A política de TLS do WebKitGTK é aplicada na thread do GTK: o
             // g_idle_add agenda a chamada no loop principal do GLib.
@@ -216,15 +427,24 @@ public partial class BrowserView : UserControl
             return;
         }
 
-        if (_webView is null)
+        if (_webView is null && _dialog is null)
         {
-            EnsureEngine();
-            return; // EnsureEngine já navega para CurrentUrl
+            EnsureEngine(); // já navega para CurrentUrl ao criar
+            return;
         }
 
         try
         {
-            _webView.Navigate(new Uri(url));
+            var uri = new Uri(url);
+            if (_webView is not null)
+            {
+                _webView.Navigate(uri);
+            }
+            else
+            {
+                _dialog!.Navigate(uri);
+                AlignDialog();
+            }
         }
         catch (Exception ex)
         {
@@ -237,30 +457,54 @@ public partial class BrowserView : UserControl
 
     private void OnAction(BrowserAction action)
     {
-        if (action == BrowserAction.Recreate)
-        {
-            DestroyEngine();
-            EnsureEngine();
-            return;
-        }
-
-        if (_webView is null)
-        {
-            return;
-        }
-
         switch (action)
         {
-            case BrowserAction.Back when _webView.CanGoBack:
-                _webView.GoBack();
-                break;
-            case BrowserAction.Forward when _webView.CanGoForward:
-                _webView.GoForward();
-                break;
-            case BrowserAction.Reload:
-                _webView.Refresh();
-                break;
+            case BrowserAction.Recreate:
+                DestroyEmbedded();
+                CloseDialog();
+                EnsureEngine();
+                return;
+            case BrowserAction.ShowWindow:
+                if (_dialog is null)
+                {
+                    EnsureEngine();
+                }
+                else
+                {
+                    AlignDialog();
+                }
+
+                return;
         }
+
+        if (_webView is not null)
+        {
+            switch (action)
+            {
+                case BrowserAction.Back when _webView.CanGoBack: _webView.GoBack(); break;
+                case BrowserAction.Forward when _webView.CanGoForward: _webView.GoForward(); break;
+                case BrowserAction.Reload: _webView.Refresh(); break;
+            }
+        }
+        else if (_dialog is not null)
+        {
+            switch (action)
+            {
+                case BrowserAction.Back when _dialog.CanGoBack: _dialog.GoBack(); break;
+                case BrowserAction.Forward when _dialog.CanGoForward: _dialog.GoForward(); break;
+                case BrowserAction.Reload: _dialog.Refresh(); break;
+            }
+        }
+    }
+
+    private Task<string?> InvokeScriptAsync(string script)
+    {
+        if (_webView is not null)
+        {
+            return _webView.InvokeScript(script);
+        }
+
+        return _dialog is not null ? _dialog.InvokeScript(script) : Task.FromResult<string?>(null);
     }
 
     private void OnNavigationStarted(object? sender, WebViewNavigationStartingEventArgs e)
@@ -281,44 +525,47 @@ public partial class BrowserView : UserControl
         });
     }
 
-    private async void OnNavigationCompleted(object? sender, WebViewNavigationCompletedEventArgs e)
+    private void OnNavigationCompleted(object? sender, WebViewNavigationCompletedEventArgs e)
     {
-        if (_vm is null)
+        Dispatcher.UIThread.Post(async () =>
         {
-            return;
-        }
-
-        _vm.IsLoading = false;
-        if (e.Request is { } uri)
-        {
-            _vm.ReportNavigated(uri.ToString());
-        }
-
-        _vm.Status = e.IsSuccess ? string.Empty : "Falha ao carregar a página.";
-
-        // O WebKit sinaliza "sucesso" mesmo na página de erro de certificado:
-        // lê o texto da página para detectar e oferecer a solução.
-        if (e.Request?.Scheme == "https" && _webView is not null && !_vm.IgnoreCertificateErrors)
-        {
-            try
+            if (_vm is null)
             {
-                var text = await _webView.InvokeScript("document.body ? document.body.innerText.substring(0, 300) : ''");
-                if (text is not null &&
-                    (text.Contains("TLS certificate", StringComparison.OrdinalIgnoreCase) ||
-                     text.Contains("NET::ERR_CERT", StringComparison.OrdinalIgnoreCase) ||
-                     text.Contains("certificate", StringComparison.OrdinalIgnoreCase) && text.Length < 200))
+                return;
+            }
+
+            _vm.IsLoading = false;
+            if (e.Request is { } uri)
+            {
+                _vm.ReportNavigated(uri.ToString());
+            }
+
+            _vm.Status = e.IsSuccess ? string.Empty : "Falha ao carregar a página.";
+
+            // O WebKit sinaliza "sucesso" mesmo na página de erro de certificado:
+            // lê o texto da página para detectar e oferecer a solução.
+            if (e.Request?.Scheme == "https" && !_vm.IgnoreCertificateErrors)
+            {
+                try
                 {
-                    _vm.ShowCertificateHint = true;
+                    var text = await InvokeScriptAsync("document.body ? document.body.innerText.substring(0, 300) : ''");
+                    if (text is not null &&
+                        (text.Contains("TLS certificate", StringComparison.OrdinalIgnoreCase) ||
+                         text.Contains("NET::ERR_CERT", StringComparison.OrdinalIgnoreCase) ||
+                         (text.Contains("certificate", StringComparison.OrdinalIgnoreCase) && text.Length < 200)))
+                    {
+                        _vm.ShowCertificateHint = true;
+                    }
+                }
+                catch
+                {
+                    // script indisponível nesta página
                 }
             }
-            catch
-            {
-                // script indisponível nesta página
-            }
-        }
+        });
     }
 
-    /// <summary>Links que abririam nova janela abrem na mesma aba do navegador embutido.</summary>
+    /// <summary>Links que abririam nova janela abrem na mesma aba do navegador.</summary>
     private void OnNewWindowRequested(object? sender, WebViewNewWindowRequestedEventArgs e)
     {
         if (e.Request is { } uri)
