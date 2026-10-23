@@ -13,7 +13,9 @@ SSH — tudo num lugar só. Roda em **Windows, Linux e Android**.
 - **Painel** — vê num relance seu IP, gateway, sub-rede e os dispositivos com página web
   na rede (com atalho pra abrir direto).
 - **Scanner de rede** — descobre quem está na rede, com nome, fabricante, latência e as
-  portas abertas. Clique com o botão direito num dispositivo para ações rápidas.
+  portas abertas. Varre várias redes de uma vez, separadas por vírgula ou espaço:
+  `192.168.0.0/24, 192.168.0 10.0.1.1/23 10.1.0.1-10.1.1.10`. Clique com o botão direito
+  num dispositivo para ações rápidas.
 - **Inspeção de host** — identifica o serviço rodando em cada porta, estima o sistema
   operacional e pega o MAC. Dá pra mandar **Wake-on-LAN** pra ligar a máquina.
 - **Diagnóstico** — ping contínuo com gráfico, traceroute e um simulador de carga pra
@@ -25,7 +27,8 @@ SSH — tudo num lugar só. Roda em **Windows, Linux e Android**.
 - **Navegador integrado** — abre a interface web de roteadores e ONUs sem sair do app, com
   atalho para alternar entre os roteadores encontrados na rede.
 - **Acesso remoto** — SSH, Telnet e **WinBox** (por IP ou MAC) direto do scanner, além de
-  um terminal SSH embutido que funciona até no celular. Se o WinBox não estiver instalado,
+  um terminal embutido com três abas — **este dispositivo** (o shell local), **SSH** e
+  **Telnet** — que funciona até no celular. Se o WinBox não estiver instalado,
   o app baixa a versão oficial da MikroTik pra você.
 - **Monitor de acessos** — mostra quem está acessando esta máquina, em qual porta e por
   qual programa, com histórico e exportação em CSV.

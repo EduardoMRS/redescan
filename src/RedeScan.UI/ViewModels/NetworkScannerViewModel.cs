@@ -103,8 +103,10 @@ public partial class NetworkScannerViewModel : ViewModelBase
         _config = config;
         _services = services;
         IsWinboxAvailable = _remote.IsWinboxAvailable;
-        // O serviço espera o prefixo terminado em ponto (ex.: "192.168.0.").
-        SubnetPrefix = _networkInterface.GetSubnetPrefix() ?? "192.168.0.";
+        // Padrão: a rede da interface principal em CIDR (ex.: 192.168.0.0/24).
+        SubnetPrefix = _networkInterface.GetSubnetPrefix() is { } prefix
+            ? $"{prefix.TrimEnd('.')}.0/24"
+            : "192.168.0.0/24";
 
         // Range de portas padrão vem das preferências do usuário (síncrono).
         try
@@ -120,30 +122,50 @@ public partial class NetworkScannerViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Garante o prefixo no formato "a.b.c." aceito pelo scanner.</summary>
-    private static string NormalizePrefix(string prefix)
-    {
-        var trimmed = prefix.Trim();
-        return trimmed.EndsWith('.') ? trimmed : trimmed + ".";
-    }
-
     private bool CanStartScan() => !IsScanning;
+
+    /// <summary>Preenche os alvos com as redes de todas as interfaces ativas (/24 de cada).</summary>
+    [RelayCommand]
+    private void UseLocalNetworks()
+    {
+        var nets = _networkInterface.GetAllActiveInterfaces()
+            .Select(i => i.IpAddress.GetAddressBytes())
+            .Where(b => b.Length == 4 && b[0] != 127)
+            .Select(b => $"{b[0]}.{b[1]}.{b[2]}.0/24")
+            .Distinct()
+            .ToList();
+        if (nets.Count > 0)
+        {
+            SubnetPrefix = string.Join(", ", nets);
+            Status = $"{nets.Count} rede(s) local(is) preenchida(s).";
+        }
+    }
 
     [RelayCommand(CanExecute = nameof(CanStartScan), IncludeCancelCommand = true)]
     private async Task ScanSubnetAsync(CancellationToken token)
     {
-        if (string.IsNullOrWhiteSpace(SubnetPrefix))
+        // Aceita várias redes: CIDR, prefixo, faixa e IP único, separados por
+        // vírgula, ponto e vírgula, espaço ou quebra de linha.
+        var targets = ScanTargetParser.Parse(SubnetPrefix);
+        if (targets.Errors.Count > 0)
         {
-            Status = "Informe um prefixo de sub-rede válido (ex.: 192.168.0).";
+            Status = "Não entendi: " + string.Join(", ", targets.Errors) +
+                     ". Exemplos: 192.168.0.0/24, 192.168.0, 10.0.0.1-10.0.0.50, 10.0.0.5";
             return;
         }
 
-        var prefix = NormalizePrefix(SubnetPrefix);
+        if (targets.Addresses.Count == 0)
+        {
+            Status = "Informe ao menos uma rede (ex.: 192.168.0.0/24).";
+            return;
+        }
+
         _scanCts = CancellationTokenSource.CreateLinkedTokenSource(token);
         IsScanning = true;
         Hosts.Clear();
         OpenPorts.Clear();
-        Status = $"Varrendo {prefix}1 – {prefix}254…";
+        var limit = targets.Truncated ? $" (limitado a {ScanTargetParser.DefaultMaxHosts:N0} hosts)" : string.Empty;
+        Status = $"Varrendo {targets.Addresses.Count:N0} endereço(s) em {string.Join(", ", targets.Ranges.Distinct())}{limit}…";
 
         var progress = new Progress<NetworkHost>(host =>
         {
@@ -155,13 +177,13 @@ public partial class NetworkScannerViewModel : ViewModelBase
 
         try
         {
-            await _scanner.ScanSubnetAsync(
-                prefix,
+            await _scanner.ScanAddressesAsync(
+                targets.Addresses,
                 probeWebPorts: true,
                 progress: progress,
                 ct: _scanCts.Token);
             var withWeb = Hosts.Count(h => h.HasWeb);
-            Status = $"Varredura concluída: {Hosts.Count} host(s) online" +
+            Status = $"Varredura concluída ({targets.Addresses.Count:N0} endereços): {Hosts.Count} host(s) online" +
                      (withWeb > 0 ? $", {withWeb} com interface web." : ".");
         }
         catch (OperationCanceledException)
@@ -443,6 +465,22 @@ public partial class NetworkScannerViewModel : ViewModelBase
         var navigator = _services.GetService(typeof(IAppNavigator)) as IAppNavigator;
         navigator?.OpenTerminal(target.IpAddress, port);
         Status = $"Terminal SSH embutido aberto para {target.IpAddress}:{port}.";
+    }
+
+    /// <summary>Abre a aba Telnet do terminal embutido (não depende do telnet do sistema).</summary>
+    [RelayCommand]
+    private void OpenTelnetEmbedded(NetworkHost? host)
+    {
+        var target = host ?? SelectedHost;
+        if (target is null)
+        {
+            return;
+        }
+
+        var port = PortForService("Telnet") ?? 23;
+        var navigator = _services.GetService(typeof(IAppNavigator)) as IAppNavigator;
+        navigator?.OpenTelnetTerminal(target.IpAddress, port);
+        Status = $"Terminal Telnet embutido aberto para {target.IpAddress}:{port}.";
     }
 
     [RelayCommand]

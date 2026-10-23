@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -8,91 +9,127 @@ using RedeScan.UI.ViewModels;
 
 namespace RedeScan.UI.Views;
 
+/// <summary>
+/// Terminal com abas. O conteúdo de cada aba vem de um DataTemplate, então os
+/// controles (caixa de comando e saída) são ligados quando entram na árvore
+/// visual, usando o DataContext da própria aba.
+/// </summary>
 public partial class TerminalView : UserControl
 {
-    private TerminalViewModel? _vm;
-
-    public TerminalView()
-    {
-        InitializeComponent();
-
-        // Tunnel: recebe o Enter ANTES do TextBox, que de outra forma pode
-        // consumir a tecla sem que o comando seja enviado.
-        var box = this.FindControl<TextBox>("CommandBox")!;
-        box.AddHandler(KeyDownEvent, OnCommandKeyDown, RoutingStrategies.Tunnel);
-
-        DataContextChanged += (_, _) =>
-        {
-            if (_vm is not null)
-            {
-                _vm.PropertyChanged -= OnVmPropertyChanged;
-            }
-
-            _vm = DataContext as TerminalViewModel;
-            if (_vm is not null)
-            {
-                _vm.PropertyChanged += OnVmPropertyChanged;
-            }
-        };
-    }
+    public TerminalView() => InitializeComponent();
 
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
+    /// <summary>Liga Enter/Tab/Ctrl+C/↑/↓ da caixa de comando (handler tunnel, antes do TextBox).</summary>
+    private void OnCommandBoxAttached(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        if (sender is not TextBox box || box.Tag is "wired")
+        {
+            return;
+        }
+
+        box.Tag = "wired";
+        box.AddHandler(KeyDownEvent, OnCommandKeyDown, RoutingStrategies.Tunnel);
+
+        // Ao conectar, o foco vai para a caixa de comando.
+        box.DataContextChanged += (_, _) => WatchConnect(box);
+        WatchConnect(box);
+    }
+
+    private static void WatchConnect(TextBox box)
+    {
+        if (box.DataContext is TerminalTabViewModel tab)
+        {
+            tab.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(TerminalTabViewModel.IsConnected) && tab.IsConnected)
+                {
+                    Dispatcher.UIThread.Post(() => box.Focus());
+                }
+            };
+        }
+    }
+
     private void OnCommandKeyDown(object? sender, KeyEventArgs e)
     {
-        if (_vm is null)
+        if ((sender as TextBox)?.DataContext is not TerminalTabViewModel tab)
         {
             return;
         }
 
         if (e.Key == Key.Enter)
         {
-            _vm.SendCommand.Execute(null);
+            tab.SendCommand.Execute(null);
             e.Handled = true;
         }
         else if (e.Key == Key.C && e.KeyModifiers.HasFlag(KeyModifiers.Control) &&
                  string.IsNullOrEmpty((sender as TextBox)?.SelectedText))
         {
-            _vm.SendKeyCommand.Execute("ctrl-c");
+            tab.SendKeyCommand.Execute("ctrl-c");
             e.Handled = true;
         }
         else if (e.Key == Key.Tab)
         {
-            _vm.SendKeyCommand.Execute("tab");
+            tab.SendKeyCommand.Execute("tab");
             e.Handled = true;
         }
         else if (e.Key == Key.Up)
         {
-            _vm.HistoryPrevious();
+            tab.HistoryPrevious();
             e.Handled = true;
         }
         else if (e.Key == Key.Down)
         {
-            _vm.HistoryNext();
+            tab.HistoryNext();
             e.Handled = true;
         }
     }
 
     private void OnPasswordKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter && _vm is not null && _vm.ConnectCommand.CanExecute(null))
+        if (e.Key == Key.Enter && (sender as Control)?.DataContext is TerminalTabViewModel tab &&
+            tab.ConnectCommand.CanExecute(null))
         {
-            _vm.ConnectCommand.Execute(null);
+            tab.ConnectCommand.Execute(null);
             e.Handled = true;
         }
     }
 
-    private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    /// <summary>Rola a saída para o fim a cada texto novo (como um terminal real).</summary>
+    private void OnOutputAttached(object? sender, VisualTreeAttachmentEventArgs e)
     {
-        if (e.PropertyName == nameof(TerminalViewModel.Output))
+        if (sender is not ScrollViewer scroll || scroll.Tag is "wired")
         {
-            // Rola para o fim a cada saída nova (como um terminal real).
-            Dispatcher.UIThread.Post(() => this.FindControl<ScrollViewer>("OutputScroll")?.ScrollToEnd(),
-                DispatcherPriority.Background);
+            return;
         }
-        else if (e.PropertyName == nameof(TerminalViewModel.IsConnected) && _vm?.IsConnected == true)
+
+        scroll.Tag = "wired";
+        TerminalTabViewModel? current = null;
+
+        void OnChanged(object? s, PropertyChangedEventArgs args)
         {
-            Dispatcher.UIThread.Post(() => this.FindControl<TextBox>("CommandBox")?.Focus());
+            if (args.PropertyName == nameof(TerminalTabViewModel.Output))
+            {
+                Dispatcher.UIThread.Post(scroll.ScrollToEnd, DispatcherPriority.Background);
+            }
         }
+
+        void Rebind()
+        {
+            if (current is not null)
+            {
+                current.PropertyChanged -= OnChanged;
+            }
+
+            current = scroll.DataContext as TerminalTabViewModel;
+            if (current is not null)
+            {
+                current.PropertyChanged += OnChanged;
+                Dispatcher.UIThread.Post(scroll.ScrollToEnd, DispatcherPriority.Background);
+            }
+        }
+
+        scroll.DataContextChanged += (_, _) => Rebind();
+        Rebind();
     }
 }

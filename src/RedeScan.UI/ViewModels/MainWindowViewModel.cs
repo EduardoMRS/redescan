@@ -140,6 +140,12 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator, IShellP
     }
 
     /// <summary>Abre o terminal SSH embutido já apontando para o host.</summary>
+    public void OpenTelnetTerminal(string host, int port = 23)
+    {
+        _terminal.Prepare(TerminalKind.Telnet, host, port);
+        CurrentPage = _terminal;
+    }
+
     public void OpenTerminal(string host, int port = 22, string? username = null)
     {
         _terminal.Prepare(host, port, username);

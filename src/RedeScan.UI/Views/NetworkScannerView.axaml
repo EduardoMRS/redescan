@@ -13,8 +13,11 @@
     <DockPanel>
         <!-- Controles -->
         <WrapPanel Classes="toolbar" DockPanel.Dock="Top">
-            <TextBlock Text="Prefixo:" VerticalAlignment="Center" />
-            <TextBox Text="{Binding SubnetPrefix}" Width="160" Watermark="192.168.0" />
+            <TextBlock Text="Redes:" VerticalAlignment="Center" />
+            <TextBox Text="{Binding SubnetPrefix}" Width="380" Watermark="192.168.0.0/24, 10.0.0, 10.1.0.1-10.1.1.10"
+                     ToolTip.Tip="Várias redes separadas por vírgula ou espaço: CIDR (192.168.0.0/24), prefixo (192.168.0), faixa (10.0.0.1-10.0.0.50 ou 10.0.0.1-50) ou IP único." />
+            <controls:IconButton Icon="LanPending" Text="Redes locais" Command="{Binding UseLocalNetworksCommand}"
+                                 ToolTip.Tip="Preenche com as redes de todas as interfaces ativas" />
             <Button Content="Varrer sub-rede"
                     Command="{Binding ScanSubnetCommand}"
                     IsVisible="{Binding !IsScanning}" />
@@ -68,7 +71,10 @@
                             <MenuItem Header="SSH (terminal do sistema)"
                                       Command="{Binding OpenSshCommand}"
                                       CommandParameter="{Binding SelectedHost}" />
-                            <MenuItem Header="Telnet"
+                            <MenuItem Header="Telnet (terminal embutido)"
+                                      Command="{Binding OpenTelnetEmbeddedCommand}"
+                                      CommandParameter="{Binding SelectedHost}" />
+                            <MenuItem Header="Telnet (terminal do sistema)"
                                       Command="{Binding OpenTelnetCommand}"
                                       CommandParameter="{Binding SelectedHost}" />
                             <MenuItem Header="Winbox (por IP)"

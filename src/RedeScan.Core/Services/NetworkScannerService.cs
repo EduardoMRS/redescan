@@ -37,17 +37,33 @@ public class NetworkScannerService : INetworkScannerService
         IProgress<NetworkHost>? progress = null, 
         CancellationToken ct = default)
     {
+        var addresses = Enumerable.Range(startHost, Math.Max(0, endHost - startHost + 1))
+            .Select(n => IPAddress.TryParse($"{subnetPrefix}{n}", out var a) ? a : null)
+            .Where(a => a is not null)
+            .Select(a => a!);
+        return await ScanAddressesAsync(addresses, timeoutMs, maxConcurrency, resolveDns, probeWebPorts, progress, ct);
+    }
+
+    public async Task<IReadOnlyList<NetworkHost>> ScanAddressesAsync(
+        IEnumerable<IPAddress> addresses,
+        int timeoutMs = 800,
+        int maxConcurrency = 40,
+        bool resolveDns = true,
+        bool probeWebPorts = false,
+        IProgress<NetworkHost>? progress = null,
+        CancellationToken ct = default)
+    {
         var discoveredHosts = new ConcurrentBag<NetworkHost>();
-        var hostsToScan = Enumerable.Range(startHost, Math.Max(0, endHost - startHost + 1)).ToList();
+        var hostsToScan = addresses.Distinct().ToList();
         var parallelOptions = new ParallelOptions
         {
             MaxDegreeOfParallelism = Math.Max(1, maxConcurrency),
             CancellationToken = ct
         };
 
-        await Parallel.ForEachAsync(hostsToScan, parallelOptions, async (hostNum, token) =>
+        await Parallel.ForEachAsync(hostsToScan, parallelOptions, async (address, token) =>
         {
-            var targetIp = $"{subnetPrefix}{hostNum}";
+            var targetIp = address.ToString();
             var pingResult = await _pingService.PingAsync(targetIp, timeoutMs, null, token);
 
             if (pingResult.Success)

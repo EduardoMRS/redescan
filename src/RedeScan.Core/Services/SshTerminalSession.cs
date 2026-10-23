@@ -19,6 +19,8 @@ public sealed class SshTerminalSession : ISshTerminalSession
 
     public bool IsConnected => _client?.IsConnected == true;
 
+    public bool NeedsLocalEcho => false;
+
     public async Task ConnectAsync(SshConnectionInfo info, CancellationToken ct = default)
     {
         var connInfo = new ConnectionInfo(
@@ -43,6 +45,8 @@ public sealed class SshTerminalSession : ISshTerminalSession
     private async Task ReadLoopAsync(CancellationToken ct)
     {
         var buffer = new byte[4096];
+        var decoder = Encoding.UTF8.GetDecoder();
+        var chars = new char[Encoding.UTF8.GetMaxCharCount(buffer.Length)];
         try
         {
             while (!ct.IsCancellationRequested && _shell is not null)
@@ -50,7 +54,8 @@ public sealed class SshTerminalSession : ISshTerminalSession
                 var read = await _shell.ReadAsync(buffer, 0, buffer.Length, ct);
                 if (read > 0)
                 {
-                    OutputReceived?.Invoke(Encoding.UTF8.GetString(buffer, 0, read));
+                    var n = decoder.GetChars(buffer, 0, read, chars, 0);
+                    OutputReceived?.Invoke(new string(chars, 0, n));
                 }
                 else
                 {
@@ -112,4 +117,8 @@ public sealed class SshTerminalSession : ISshTerminalSession
 public sealed class SshTerminalFactory : ISshTerminalFactory
 {
     public ISshTerminalSession Create() => new SshTerminalSession();
+
+    public ITelnetTerminalSession CreateTelnet() => new TelnetTerminalSession();
+
+    public ILocalShellSession CreateLocal() => new LocalShellSession();
 }

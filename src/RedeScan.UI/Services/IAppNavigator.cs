@@ -12,4 +12,7 @@ public interface IAppNavigator
 
     /// <summary>Abre o terminal SSH embutido já apontando para o host.</summary>
     void OpenTerminal(string host, int port = 22, string? username = null);
+
+    /// <summary>Abre a aba Telnet do terminal embutido já apontando para o host.</summary>
+    void OpenTelnetTerminal(string host, int port = 23);
 }

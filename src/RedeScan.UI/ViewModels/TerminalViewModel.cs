@@ -7,23 +7,103 @@ using RedeScan.Core.Services;
 
 namespace RedeScan.UI.ViewModels;
 
+/// <summary>Tipo de terminal de uma aba.</summary>
+public enum TerminalKind
+{
+    Local,
+    Ssh,
+    Telnet
+}
+
 /// <summary>
-/// Terminal SSH embutido, disponível em todas as plataformas (inclusive
-/// Android). Usa <see cref="ISshTerminalSession"/> (SSH.NET) — um shell de
-/// linha/stream, adequado para CLI de roteadores/switches. Não é um emulador
-/// VT100 completo.
+/// Terminal embutido com três abas independentes: o shell deste dispositivo,
+/// SSH (SSH.NET) e Telnet (cliente gerenciado). Cada aba tem sessão, saída e
+/// histórico próprios — dá para manter o shell local aberto enquanto acessa
+/// um roteador. Funciona em todas as plataformas (inclusive Android).
 /// </summary>
 public partial class TerminalViewModel : ViewModelBase
 {
-    private readonly ISshTerminalFactory _factory;
-    private ISshTerminalSession? _session;
-    private readonly StringBuilder _buffer = new();
-
-    public override string Title => "Terminal SSH";
+    public override string Title => "Terminal";
     public override string Icon => "⌨️";
 
+    /// <summary>Mantém a chave antiga: preferências salvas (tela inicial/módulos) continuam valendo.</summary>
+    public override string Key => "terminal";
+
+    public TerminalTabViewModel LocalTab { get; }
+    public TerminalTabViewModel SshTab { get; }
+    public TerminalTabViewModel TelnetTab { get; }
+
+    public IReadOnlyList<TerminalTabViewModel> Tabs { get; }
+
+    [ObservableProperty] private TerminalTabViewModel _selectedTab;
+
+    public TerminalViewModel(ISshTerminalFactory factory)
+    {
+        LocalTab = new TerminalTabViewModel(TerminalKind.Local, factory);
+        SshTab = new TerminalTabViewModel(TerminalKind.Ssh, factory);
+        TelnetTab = new TerminalTabViewModel(TerminalKind.Telnet, factory);
+        Tabs = new[] { LocalTab, SshTab, TelnetTab };
+        _selectedTab = SshTab;
+    }
+
+    /// <summary>Pré-preenche a aba SSH (usado ao abrir a partir do scanner).</summary>
+    public void Prepare(string host, int port = 22, string? username = null) =>
+        Prepare(TerminalKind.Ssh, host, port, username);
+
+    /// <summary>Pré-preenche a aba do tipo informado e a seleciona.</summary>
+    public void Prepare(TerminalKind kind, string host, int port, string? username = null)
+    {
+        var tab = kind switch
+        {
+            TerminalKind.Telnet => TelnetTab,
+            TerminalKind.Local => LocalTab,
+            _ => SshTab
+        };
+        tab.Prepare(host, port, username);
+        SelectedTab = tab;
+    }
+}
+
+/// <summary>Uma aba do terminal (uma sessão).</summary>
+public partial class TerminalTabViewModel : ObservableObject
+{
+    private readonly ISshTerminalFactory _factory;
+    private ITerminalSession? _session;
+    private readonly StringBuilder _buffer = new();
+    private readonly List<string> _history = new();
+    private int _historyIndex;
+
+    public TerminalTabViewModel(TerminalKind kind, ISshTerminalFactory factory)
+    {
+        Kind = kind;
+        _factory = factory;
+        _port = kind == TerminalKind.Telnet ? 23 : 22;
+        _status = kind switch
+        {
+            TerminalKind.Local => "Abra o terminal deste dispositivo. Ele roda com o mesmo usuário do RedeScan.",
+            TerminalKind.Telnet => "Informe host e porta. Usuário e senha são pedidos pelo próprio equipamento.",
+            _ => "Informe host, usuário e senha para conectar via SSH."
+        };
+    }
+
+    public TerminalKind Kind { get; }
+
+    public string Header => Kind switch
+    {
+        TerminalKind.Local => "Este dispositivo",
+        TerminalKind.Telnet => "Telnet",
+        _ => "SSH"
+    };
+
+    public bool IsLocal => Kind == TerminalKind.Local;
+    public bool IsRemote => Kind != TerminalKind.Local;
+    public bool IsSsh => Kind == TerminalKind.Ssh;
+
+    public string ConnectLabel => IsLocal ? "Abrir terminal" : "Conectar";
+    public string DisconnectLabel => IsLocal ? "Encerrar" : "Desconectar";
+
     [ObservableProperty] private string _host = string.Empty;
-    [ObservableProperty] private int _port = 22;
+    [ObservableProperty] private int _port;
     [ObservableProperty] private string _username = string.Empty;
     [ObservableProperty] private string _password = string.Empty;
 
@@ -31,19 +111,14 @@ public partial class TerminalViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(IsDisconnected))]
     private bool _isConnected;
 
+    [ObservableProperty] private bool _isConnecting;
     [ObservableProperty] private string _output = string.Empty;
     [ObservableProperty] private string _commandInput = string.Empty;
-    [ObservableProperty] private string _status = "Informe host, usuário e senha para conectar via SSH.";
+    [ObservableProperty] private string _status;
 
     public bool IsDisconnected => !IsConnected;
 
-    public TerminalViewModel(ISshTerminalFactory factory)
-    {
-        _factory = factory;
-    }
-
-    /// <summary>Pré-preenche a conexão (usado ao abrir a partir do scanner).</summary>
-    public void Prepare(string host, int port = 22, string? username = null)
+    public void Prepare(string host, int port, string? username)
     {
         Host = host;
         Port = port;
@@ -51,50 +126,85 @@ public partial class TerminalViewModel : ViewModelBase
         {
             Username = username;
         }
+
         Status = $"Pronto para conectar em {host}:{port}.";
     }
 
     [RelayCommand]
     private async Task ConnectAsync()
     {
-        if (IsConnected)
+        if (IsConnected || IsConnecting)
         {
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(Host) || string.IsNullOrWhiteSpace(Username))
+        if (IsRemote && string.IsNullOrWhiteSpace(Host))
         {
-            Status = "Informe ao menos host e usuário.";
+            Status = "Informe o host.";
             return;
         }
 
-        _session = _factory.Create();
-        _session.OutputReceived += OnOutput;
-        _session.Disconnected += OnDisconnected;
+        if (IsSsh && string.IsNullOrWhiteSpace(Username))
+        {
+            Status = "Informe o usuário.";
+            return;
+        }
 
-        Status = $"Conectando em {Host}:{Port}…";
+        IsConnecting = true;
         try
         {
-            await _session.ConnectAsync(new SshConnectionInfo
+            switch (Kind)
             {
-                Host = Host.Trim(),
-                Port = Port,
-                Username = Username.Trim(),
-                Password = Password
-            });
+                case TerminalKind.Local:
+                    var local = _factory.CreateLocal();
+                    Attach(local);
+                    Status = "Abrindo terminal local…";
+                    await local.StartAsync();
+                    Status = $"Terminal local: {local.ShellDescription}.";
+                    break;
+
+                case TerminalKind.Telnet:
+                    var telnet = _factory.CreateTelnet();
+                    Attach(telnet);
+                    Status = $"Conectando via Telnet em {Host}:{Port}…";
+                    await telnet.ConnectAsync(Host.Trim(), Port);
+                    Status = $"Conectado (Telnet) a {Host}:{Port}. Atenção: Telnet não é criptografado.";
+                    break;
+
+                default:
+                    var ssh = _factory.Create();
+                    Attach(ssh);
+                    Status = $"Conectando via SSH em {Host}:{Port}…";
+                    await ssh.ConnectAsync(new SshConnectionInfo
+                    {
+                        Host = Host.Trim(),
+                        Port = Port,
+                        Username = Username.Trim(),
+                        Password = Password
+                    });
+                    Status = $"Conectado (SSH) a {Host}:{Port}.";
+                    break;
+            }
 
             IsConnected = true;
-            Status = $"Conectado a {Host}:{Port}.";
         }
         catch (Exception ex)
         {
             Status = $"Falha ao conectar: {ex.Message}";
             CleanupSession();
         }
+        finally
+        {
+            IsConnecting = false;
+        }
     }
 
-    private readonly List<string> _history = new();
-    private int _historyIndex;
+    private void Attach(ITerminalSession session)
+    {
+        _session = session;
+        session.OutputReceived += OnOutput;
+        session.Disconnected += OnDisconnected;
+    }
 
     [RelayCommand]
     private async Task SendAsync()
@@ -104,8 +214,6 @@ public partial class TerminalViewModel : ViewModelBase
             return;
         }
 
-        // Envia o comando com quebra de linha (como pressionar Enter). O eco
-        // aparece na tela porque o próprio servidor devolve o que recebe.
         var cmd = CommandInput ?? string.Empty;
         CommandInput = string.Empty;
         if (cmd.Length > 0 && (_history.Count == 0 || _history[^1] != cmd))
@@ -114,6 +222,13 @@ public partial class TerminalViewModel : ViewModelBase
         }
 
         _historyIndex = _history.Count;
+
+        // Shell sem eco próprio (pipes, telnet sem WILL ECHO): mostra o comando.
+        if (_session.NeedsLocalEcho)
+        {
+            AppendOutput(cmd + "\n");
+        }
+
         try
         {
             await _session.SendAsync(cmd + "\r");
@@ -187,7 +302,7 @@ public partial class TerminalViewModel : ViewModelBase
     private void Disconnect()
     {
         _session?.Disconnect();
-        Status = "Desconectado.";
+        Status = IsLocal ? "Terminal encerrado." : "Desconectado.";
     }
 
     [RelayCommand]
@@ -201,16 +316,19 @@ public partial class TerminalViewModel : ViewModelBase
     {
         // Evento vem de thread de background: marshala para a UI.
         var clean = AnsiFilter.Clean(text);
-        Dispatcher.UIThread.Post(() =>
+        Dispatcher.UIThread.Post(() => AppendOutput(clean));
+    }
+
+    private void AppendOutput(string clean)
+    {
+        AnsiFilter.AppendWithBackspace(_buffer, clean);
+        // Limita o histórico para não crescer indefinidamente.
+        if (_buffer.Length > 200_000)
         {
-            AnsiFilter.AppendWithBackspace(_buffer, clean);
-            // Limita o histórico para não crescer indefinidamente.
-            if (_buffer.Length > 200_000)
-            {
-                _buffer.Remove(0, _buffer.Length - 150_000);
-            }
-            Output = _buffer.ToString();
-        });
+            _buffer.Remove(0, _buffer.Length - 150_000);
+        }
+
+        Output = _buffer.ToString();
     }
 
     private void OnDisconnected(string? error)

@@ -214,3 +214,8 @@ RedeScan/
 - [x] **Instaladores Full baixam dependências:** .deb (`Depends`: WebKitGTK, GTK3, ffmpeg, iproute2), .rpm (`Requires`), setup.exe (WebView2 + ffmpeg via página de download do Inno). Validados em Ubuntu 22.04/24.04 e Fedora 40.
 - [x] **Log de falhas:** `AppLog` grava em `logs/` na pasta do app (fallback no perfil), arquivo por usuário, `crash-*.log` em exceções não tratadas, espelhado no console (`redescan --verbose`, `sudo redescan`; no Windows anexa ao console do terminal).
 - [x] **Repaginação do layout (v1.0.4):** ícones vetoriais (Material.Icons.Avalonia 2.4.1) no lugar dos emojis, `IconButton`, ícone por módulo, botões neutro/accent/danger, menu com barra de destaque, campos padronizados (PR #4).
+
+---
+### 🖥️ v1.0.4 (complemento) — terminal com 3 abas + scanner multi-rede
+- [x] **Terminal:** abas "Este dispositivo" (shell local: bash em PTY via `script` no Linux, `cmd.exe` no Windows, `sh -i` como fallback), "SSH" e "Telnet" (cliente RFC 854 gerenciado, sem depender do `telnet` do sistema). Cada aba tem sessão, saída e histórico próprios. Scanner ganhou "Telnet (terminal embutido)". Validado: shell local e telnet (busybox telnetd) executando comandos.
+- [x] **Scanner multi-rede:** `ScanTargetParser` aceita CIDR, prefixo (2–3 octetos), faixa (`a-b` ou `a-último octeto`) e IP único, separados por vírgula/;/espaço/linha; sem duplicados, sem rede/broadcast, limite de 65.536 hosts. Botão "Redes locais" preenche com as redes de todas as interfaces. `INetworkScannerService.ScanAddressesAsync`.
