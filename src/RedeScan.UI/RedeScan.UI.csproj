@@ -22,6 +22,7 @@
          funcionava e ocupava ~400 MB nos pacotes Full. -->
     <PackageReference Include="Avalonia.Controls.WebView" Version="11.4.1" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Material.Icons.Avalonia" Version="2.4.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
   </ItemGroup>
 
