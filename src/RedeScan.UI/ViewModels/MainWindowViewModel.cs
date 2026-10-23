@@ -29,7 +29,30 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator, IShellP
     public ObservableCollection<ViewModelBase> Pages { get; } = new();
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSettingsActive))]
+    [NotifyPropertyChangedFor(nameof(SelectedMenuPage))]
     private ViewModelBase _currentPage;
+
+    /// <summary>Configurações: fixo no rodapé do menu lateral (fora da lista).</summary>
+    public SettingsViewModel SettingsPage { get; }
+
+    public bool IsSettingsActive => ReferenceEquals(CurrentPage, SettingsPage);
+
+    /// <summary>
+    /// Item destacado na lista do menu. Fica nulo quando a página atual é
+    /// Configurações (que não está na lista) — sem quebrar a navegação.
+    /// </summary>
+    public ViewModelBase? SelectedMenuPage
+    {
+        get => Pages.Contains(CurrentPage) ? CurrentPage : null;
+        set
+        {
+            if (value is not null)
+            {
+                CurrentPage = value;
+            }
+        }
+    }
 
     [ObservableProperty]
     private bool _isDarkTheme = true;
@@ -45,6 +68,7 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator, IShellP
         NetworkConfigViewModel networkConfig,
         TerminalViewModel terminal,
         TftpViewModel tftp,
+        AccessMonitorViewModel accessMonitor,
         SettingsViewModel settings,
         INetworkInterfaceService networkInterface,
         IConfigurationService config)
@@ -53,6 +77,7 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator, IShellP
         _terminal = terminal;
         _networkInterface = networkInterface;
         _config = config;
+        SettingsPage = settings;
 
         _allPages = new List<ViewModelBase>
         {
@@ -66,13 +91,9 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator, IShellP
             networkConfig,
             terminal,
             tftp,
+            accessMonitor,
             settings
         };
-
-        foreach (var page in _allPages)
-        {
-            Pages.Add(page);
-        }
 
         _currentPage = dashboard;
 
@@ -83,7 +104,7 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator, IShellP
         ApplyPreferences(saved);
         ApplyBrowserHome(saved);
         var startup = _allPages.FirstOrDefault(p => p.Key == saved.StartupPageKey);
-        if (startup is not null && Pages.Contains(startup))
+        if (startup is not null && (Pages.Contains(startup) || ReferenceEquals(startup, SettingsPage)))
         {
             _currentPage = startup;
         }
@@ -99,7 +120,7 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator, IShellP
     }
 
     [RelayCommand]
-    private void ToggleTheme() => IsDarkTheme = !IsDarkTheme;
+    private void OpenSettings() => CurrentPage = SettingsPage;
 
     /// <summary>Define o módulo clicado (botão direito) como tela inicial e persiste.</summary>
     [RelayCommand]
@@ -132,6 +153,7 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator, IShellP
     public void ApplyPreferences(AppSettings settings)
     {
         SetTheme(settings.Theme);
+        _browser.IgnoreCertificateErrors = settings.BrowserIgnoreCertificateErrors;
 
         var enabled = settings.EnabledModules;
         var previous = CurrentPage;
@@ -139,15 +161,19 @@ public partial class MainWindowViewModel : ViewModelBase, IAppNavigator, IShellP
         Pages.Clear();
         foreach (var page in _allPages)
         {
-            // "settings" nunca é ocultado; demais seguem a lista (vazia = todos).
-            if (page.Key == "settings" || enabled.Count == 0 || enabled.Contains(page.Key))
+            // Configurações fica fixo no rodapé (fora da lista); os demais
+            // seguem a lista de módulos visíveis (vazia = todos).
+            if (page.Key != "settings" && (enabled.Count == 0 || enabled.Contains(page.Key)))
             {
                 Pages.Add(page);
             }
         }
 
         // Se a página atual foi ocultada, cai para a primeira visível.
-        CurrentPage = Pages.Contains(previous) ? previous : Pages.FirstOrDefault() ?? previous;
+        CurrentPage = Pages.Contains(previous) || ReferenceEquals(previous, SettingsPage)
+            ? previous
+            : Pages.FirstOrDefault() ?? SettingsPage;
+        OnPropertyChanged(nameof(SelectedMenuPage));
     }
 
     public void SetTheme(string theme)

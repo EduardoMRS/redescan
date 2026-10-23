@@ -9,10 +9,10 @@
              x:DataType="vm:WifiScannerViewModel">
 
     <DockPanel>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
+        <WrapPanel Classes="toolbar" DockPanel.Dock="Top">
             <Button Content="📶 Escanear" Command="{Binding ScanCommand}" IsEnabled="{Binding !IsScanning}" />
             <ProgressBar IsIndeterminate="True" Width="120" IsVisible="{Binding IsScanning}" VerticalAlignment="Center" />
-        </StackPanel>
+        </WrapPanel>
 
         <TextBlock DockPanel.Dock="Bottom" Classes="subtle" Text="{Binding Status}" Margin="0,8,0,0" />
 

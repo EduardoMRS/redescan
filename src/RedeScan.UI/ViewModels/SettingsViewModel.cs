@@ -60,7 +60,12 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private string _browserHome = "router";
     [ObservableProperty] private int _portScanStart = 1;
     [ObservableProperty] private int _portScanEnd = 1024;
+    [ObservableProperty] private bool _browserIgnoreCertificateErrors;
+    [ObservableProperty] private int _accessMonitorInterval = 2;
     [ObservableProperty] private string _status = "Carregando preferências…";
+
+    /// <summary>Onde o log e os relatórios de falha estão sendo gravados.</summary>
+    public string LogFolder => RedeScan.Core.Diagnostics.AppPaths.LogsDir;
 
     public SettingsViewModel(IConfigurationService config, IServiceProvider services)
     {
@@ -78,6 +83,12 @@ public partial class SettingsViewModel : ViewModelBase
         var enabled = _settings.EnabledModules;
         foreach (var (key, title, icon) in Shell.GetModules())
         {
+            // Configurações fica sempre visível no rodapé do menu.
+            if (key == "settings")
+            {
+                continue;
+            }
+
             // "settings" não pode ser desabilitado — sempre acessível.
             var toggle = new ModuleToggle(key, title, icon)
             {
@@ -95,6 +106,8 @@ public partial class SettingsViewModel : ViewModelBase
         BrowserHome = string.IsNullOrWhiteSpace(_settings.BrowserHomeUrl) ? "router" : _settings.BrowserHomeUrl;
         PortScanStart = _settings.PortScanStart;
         PortScanEnd = _settings.PortScanEnd;
+        BrowserIgnoreCertificateErrors = _settings.BrowserIgnoreCertificateErrors;
+        AccessMonitorInterval = _settings.AccessMonitorIntervalSeconds;
 
         _loading = false;
         Status = "Preferências carregadas. As mudanças aplicam ao salvar.";
@@ -114,6 +127,8 @@ public partial class SettingsViewModel : ViewModelBase
         _settings.BrowserHomeUrl = string.IsNullOrWhiteSpace(BrowserHome) ? "router" : BrowserHome.Trim();
         _settings.PortScanStart = PortScanStart;
         _settings.PortScanEnd = PortScanEnd;
+        _settings.BrowserIgnoreCertificateErrors = BrowserIgnoreCertificateErrors;
+        _settings.AccessMonitorIntervalSeconds = Math.Clamp(AccessMonitorInterval, 1, 30);
         _settings.EnabledModules = Modules
             .Where(m => m.IsEnabled)
             .Select(m => m.Key)
@@ -125,6 +140,26 @@ public partial class SettingsViewModel : ViewModelBase
         Shell.ApplyPreferences(_settings);
 
         Status = $"Preferências salvas em {_config.GetConfigFilePath()}";
+    }
+
+    /// <summary>Abre a pasta de logs no gerenciador de arquivos do sistema.</summary>
+    [RelayCommand]
+    private void OpenLogFolder()
+    {
+        try
+        {
+            var dir = LogFolder;
+            var psi = OperatingSystem.IsWindows()
+                ? new System.Diagnostics.ProcessStartInfo("explorer.exe")
+                : new System.Diagnostics.ProcessStartInfo(OperatingSystem.IsMacOS() ? "open" : "xdg-open");
+            psi.ArgumentList.Add(dir);
+            psi.UseShellExecute = false;
+            System.Diagnostics.Process.Start(psi);
+        }
+        catch (Exception ex)
+        {
+            Status = "Não foi possível abrir a pasta: " + ex.Message;
+        }
     }
 
     partial void OnThemeChanged(string value)

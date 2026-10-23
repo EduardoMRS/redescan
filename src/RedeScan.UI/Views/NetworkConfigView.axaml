@@ -42,10 +42,10 @@
                                 <TextBox Grid.Column="1" Text="{Binding Gateway}" Watermark="192.168.0.1" />
                             </Grid>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="8">
+                        <WrapPanel Classes="toolbar">
                             <Button Content="👁 Pré-visualizar" Command="{Binding PreviewIpCommand}" />
                             <Button Content="✓ Aplicar IP" Classes="accent" Command="{Binding ApplyIpCommand}" />
-                        </StackPanel>
+                        </WrapPanel>
                     </StackPanel>
                 </Border>
 
@@ -71,10 +71,10 @@
                             <TextBlock Grid.Column="0" Text="Senha" VerticalAlignment="Center" />
                             <TextBox Grid.Column="1" Text="{Binding PppoePassword}" PasswordChar="•" />
                         </Grid>
-                        <StackPanel Orientation="Horizontal" Spacing="8">
+                        <WrapPanel Classes="toolbar">
                             <Button Content="👁 Pré-visualizar" Command="{Binding PreviewPppoeCommand}" />
                             <Button Content="✓ Conectar PPPoE" Classes="accent" Command="{Binding ApplyPppoeCommand}" />
-                        </StackPanel>
+                        </WrapPanel>
                     </StackPanel>
                 </Border>
 
@@ -110,10 +110,10 @@
                                 <TextBox Grid.Column="1" Text="{Binding VlanDnsServers}" Watermark="8.8.8.8, 1.1.1.1 (opcional)" />
                             </Grid>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="8">
+                        <WrapPanel Classes="toolbar">
                             <Button Content="👁 Pré-visualizar" Command="{Binding PreviewVlanCommand}" />
                             <Button Content="✓ Criar VLAN" Classes="accent" Command="{Binding ApplyVlanCommand}" />
-                        </StackPanel>
+                        </WrapPanel>
                         <TextBlock Classes="subtle" FontSize="10" TextWrapping="Wrap"
                                    Text="No Linux cria a VLAN via nmcli (NetworkManager). No Windows, VLANs dependem da ferramenta do fabricante da placa — a pré-visualização mostra as instruções." />
                     </StackPanel>

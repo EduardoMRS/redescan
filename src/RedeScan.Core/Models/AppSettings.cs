@@ -34,6 +34,16 @@ public class AppSettings
     /// <summary>Porta final padrão do scan de portas.</summary>
     public int PortScanEnd { get; set; } = 1024;
 
+    /// <summary>
+    /// Aceita certificados HTTPS inválidos/autoassinados no navegador embutido
+    /// (comum em roteadores). Desligado por padrão: reduz a segurança do HTTPS
+    /// para todos os sites abertos no navegador embutido.
+    /// </summary>
+    public bool BrowserIgnoreCertificateErrors { get; set; }
+
+    /// <summary>Intervalo de atualização do monitor de acessos (segundos).</summary>
+    public int AccessMonitorIntervalSeconds { get; set; } = 2;
+
     public static AppSettings CreateDefault()
     {
         return new AppSettings

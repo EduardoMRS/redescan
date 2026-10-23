@@ -39,26 +39,17 @@ jobs:
       - name: Executar testes
         run: dotnet test RedeScan.sln --configuration Release --no-build --verbosity normal
 
-  # Validação (não bloqueante) de que a variante com mídia nativa compila,
-  # sem gerar o pacote pesado. Mantém a build Full "honesta" a cada mudança.
-  validate-native-media:
-    name: Validar compilação com mídia nativa
+  # Valida o script do instalador Windows (Inno Setup) a cada mudança, sem
+  # precisar de um runner Windows: compila o .iss num container Wine.
+  validate-windows-installer:
+    name: Validar instalador Windows (Inno Setup)
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
-
-      - name: Configurar SDK do .NET 8
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Instalar libvlc
-        run: sudo apt-get update && sudo apt-get install -y libvlc-dev vlc
-
-      - name: Compilar com EnableNativeMedia=true
-        run: >
-          dotnet build src/RedeScan.Desktop/RedeScan.Desktop.csproj
-          --configuration Release
-          -p:EnableNativeMedia=true
+      - name: Compilar o .iss com uma pasta publicada fictícia
+        run: |
+          mkdir -p full/win-x64 && echo placeholder > full/win-x64/RedeScan.exe
+          docker run --rm -v "$PWD:/work" amake/innosetup \
+            '/DPublishDir=Z:\work\full\win-x64' /DAppVersion=0.0.0 scripts/packaging/redescan.iss

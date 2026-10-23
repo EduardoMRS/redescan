@@ -36,6 +36,7 @@ public static class Composition
         services.AddSingleton<NetworkConfigViewModel>();
         services.AddSingleton<TerminalViewModel>();
         services.AddSingleton<TftpViewModel>();
+        services.AddSingleton<AccessMonitorViewModel>();
         services.AddSingleton<SettingsViewModel>();
 
         // IAppNavigator e IShellPreferences são o próprio MainWindowViewModel

@@ -9,9 +9,9 @@ public sealed record RemoteAccessResult
 }
 
 /// <summary>
-/// Abre clientes de acesso remoto do sistema (SSH, Telnet e Winbox) para um
-/// dispositivo da rede. Não embute terminal/cliente próprio — delega ao cliente
-/// já instalado no SO, o que é leve e multiplataforma.
+/// Abre clientes de acesso remoto do sistema (SSH, Telnet e WinBox) para um
+/// dispositivo da rede. SSH/Telnet abrem num terminal do sistema; o WinBox é
+/// baixado automaticamente (versão oficial MikroTik) quando não existir.
 /// </summary>
 public interface IRemoteAccessService
 {
@@ -22,12 +22,16 @@ public interface IRemoteAccessService
     RemoteAccessResult OpenTelnet(string host, int port = 23);
 
     /// <summary>
-    /// Abre o Winbox apontando para o host, que pode ser um IP ou um MAC
-    /// (o Winbox conecta por MAC em camada 2). Requer o Winbox instalado/no PATH
-    /// (no Linux, normalmente via Wine).
+    /// Abre o WinBox apontando para o host (IP ou MAC — o WinBox conecta por MAC
+    /// em camada 2). Se o WinBox não estiver instalado, baixa a versão oficial
+    /// (com verificação SHA-256) para a pasta de ferramentas do usuário.
     /// </summary>
-    RemoteAccessResult OpenWinbox(string hostOrMac);
+    Task<RemoteAccessResult> OpenWinboxAsync(
+        string hostOrMac,
+        string? username = null,
+        IProgress<ToolDownloadProgress>? progress = null,
+        CancellationToken ct = default);
 
-    /// <summary>True se o Winbox foi localizado no sistema (PATH/locais comuns).</summary>
+    /// <summary>True se o WinBox já está disponível localmente (sem precisar baixar).</summary>
     bool IsWinboxAvailable { get; }
 }

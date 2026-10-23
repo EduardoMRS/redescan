@@ -10,7 +10,7 @@
 
     <DockPanel>
         <!-- Controles -->
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
+        <WrapPanel Classes="toolbar" DockPanel.Dock="Top">
             <TextBlock Text="Prefixo:" VerticalAlignment="Center" />
             <TextBox Text="{Binding SubnetPrefix}" Width="160" Watermark="192.168.0" />
             <Button Content="Varrer sub-rede"
@@ -21,7 +21,7 @@
                     IsVisible="{Binding IsScanning}" />
             <ProgressBar IsIndeterminate="True" Width="120"
                          IsVisible="{Binding IsScanning}" VerticalAlignment="Center" />
-        </StackPanel>
+        </WrapPanel>
 
         <TextBlock DockPanel.Dock="Bottom" Classes="subtle" Text="{Binding Status}" Margin="0,8,0,0" />
 
@@ -115,7 +115,7 @@
                             </StackPanel>
                             <TextBlock Classes="subtle" FontSize="10" TextWrapping="Wrap"
                                        Text="Sem marcar, varre o range acima (padrão vem das Configurações). Marcado, testa todas as 65.535 portas TCP (mais lento)." />
-                            <StackPanel Orientation="Horizontal" Spacing="8">
+                            <WrapPanel Classes="toolbar">
                                 <Button Content="Escanear portas"
                                         Command="{Binding ScanPortsCommand}"
                                         IsVisible="{Binding !IsScanningPorts}" />
@@ -124,7 +124,7 @@
                                         IsVisible="{Binding IsScanningPorts}" />
                                 <ProgressBar IsIndeterminate="True" Width="80" VerticalAlignment="Center"
                                              IsVisible="{Binding IsScanningPorts}" />
-                            </StackPanel>
+                            </WrapPanel>
                         </StackPanel>
                         <DataGrid ItemsSource="{Binding OpenPorts}" IsReadOnly="True">
                             <DataGrid.Columns>
@@ -139,7 +139,7 @@
                 <TabItem Header="Detalhes">
                     <ScrollViewer>
                         <StackPanel Margin="0,8,0,0" Spacing="6">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
+                            <WrapPanel Classes="toolbar">
                                 <Button Content="🔬 Inspecionar"
                                         Classes="accent"
                                         Command="{Binding InspectCommand}"
@@ -150,7 +150,7 @@
                                 <Button Content="⏻ Wake-on-LAN"
                                         Command="{Binding WakeOnLanCommand}"
                                         CommandParameter="{Binding SelectedHost}" />
-                            </StackPanel>
+                            </WrapPanel>
 
                             <Border Classes="card" IsVisible="{Binding HostDetails, Converter={x:Static ObjectConverters.IsNotNull}}">
                                 <StackPanel Spacing="4">

@@ -46,7 +46,12 @@ Categories=Network;Utility;
 Terminal=false
 EOF
 
-# Metadados do pacote. libvlc5 é recomendado para o vídeo RTSP funcionar.
+# Metadados do pacote. As dependências são baixadas pelo apt na instalação:
+#  - WebKitGTK + GTK3: navegador embutido (motor web do sistema)
+#  - ffmpeg: vídeo das câmeras RTSP e prévias
+#  - iproute2 (ss): monitor de acessos
+# Instale com "sudo apt install ./RedeScan-Full-Linux-x64.deb" (o apt resolve tudo).
+# As alternativas cobrem Ubuntu 22.04 (nomes antigos) e 24.04+ (transição t64).
 INSTALLED_KB="$(du -sk "${INSTALL_DIR}" | cut -f1)"
 cat > "${PKGROOT}/DEBIAN/control" <<EOF
 Package: redescan
@@ -56,11 +61,22 @@ Priority: optional
 Architecture: amd64
 Maintainer: RedeScan <deveduardomrs.pro>
 Installed-Size: ${INSTALLED_KB}
-Recommends: vlc, libvlc5
+Depends: libwebkit2gtk-4.1-0 | libwebkit2gtk-4.0-37, libgtk-3-0t64 | libgtk-3-0, ffmpeg, iproute2, libicu74 | libicu72 | libicu70 | libicu76
+Recommends: network-manager, openssh-client, telnet
 Description: RedeScan - análise e teste de redes
  Ferramenta multiplataforma de diagnóstico de redes: scanner, Wi-Fi,
  câmeras RTSP, navegador integrado e terminal SSH.
 EOF
+
+# Pós-instalação: bit de execução, pasta de logs gravável e dica de uso.
+printf '%s\n' \
+  '#!/bin/sh' \
+  'set -e' \
+  'chmod +x /opt/redescan/RedeScan || true' \
+  'mkdir -p /opt/redescan/logs && chmod 1777 /opt/redescan/logs || true' \
+  'echo "RedeScan instalado. Para iniciar com log no terminal: redescan --verbose"' \
+  'exit 0' > "${PKGROOT}/DEBIAN/postinst"
+chmod 0755 "${PKGROOT}/DEBIAN/postinst"
 
 echo ">> Gerando ${OUT}"
 dpkg-deb --build --root-owner-group "${PKGROOT}" "${OUT}"

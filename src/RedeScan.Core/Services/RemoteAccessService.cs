@@ -14,14 +14,14 @@ public sealed class RemoteAccessService : IRemoteAccessService
     private static bool IsLinux => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
     private static bool IsMac => RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
 
-    private readonly string? _winboxPath;
+    private readonly IExternalToolService _tools;
 
-    public RemoteAccessService()
+    public RemoteAccessService(IExternalToolService tools)
     {
-        _winboxPath = LocateWinbox();
+        _tools = tools;
     }
 
-    public bool IsWinboxAvailable => _winboxPath is not null;
+    public bool IsWinboxAvailable => _tools.Find(ExternalTool.WinBox) is not null;
 
     public RemoteAccessResult OpenSsh(string host, int port = 22, string? username = null)
     {
@@ -36,33 +36,60 @@ public sealed class RemoteAccessService : IRemoteAccessService
         return OpenInTerminal(telnetCmd);
     }
 
-    public RemoteAccessResult OpenWinbox(string hostOrMac)
+    public async Task<RemoteAccessResult> OpenWinboxAsync(
+        string hostOrMac,
+        string? username = null,
+        IProgress<ToolDownloadProgress>? progress = null,
+        CancellationToken ct = default)
     {
-        if (_winboxPath is null)
+        string winbox;
+        try
+        {
+            winbox = await _tools.EnsureAsync(ExternalTool.WinBox, progress, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
         {
             return new RemoteAccessResult
             {
                 Launched = false,
-                Command = $"winbox {hostOrMac}",
-                Error = "Winbox não encontrado no sistema (instale ou adicione ao PATH)."
+                Command = $"WinBox {hostOrMac}",
+                Error = $"Não foi possível obter o WinBox: {ex.Message}"
             };
         }
 
         try
         {
-            // No Linux, um winbox .exe precisa do Wine; um binário nativo roda direto.
-            if (IsLinux && _winboxPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            // WinBox 4: "WinBox <connect-to> [usuário] [senha]". A senha NÃO é
+            // passada pela linha de comando (ficaria visível na lista de
+            // processos); o WinBox a pede na tela de login.
+            var isLegacyExeOnLinux = IsLinux && winbox.EndsWith(".exe", StringComparison.OrdinalIgnoreCase);
+            var psi = new ProcessStartInfo(isLegacyExeOnLinux ? "wine" : winbox)
             {
-                Process.Start(new ProcessStartInfo("wine", $"\"{_winboxPath}\" {hostOrMac}") { UseShellExecute = false });
-                return new RemoteAccessResult { Launched = true, Command = $"wine {_winboxPath} {hostOrMac}" };
+                UseShellExecute = false,
+                // O WinBox 4 carrega a pasta "assets" relativa ao executável.
+                WorkingDirectory = Path.GetDirectoryName(winbox) ?? Environment.CurrentDirectory
+            };
+            if (isLegacyExeOnLinux)
+            {
+                psi.ArgumentList.Add(winbox);
             }
 
-            Process.Start(new ProcessStartInfo(_winboxPath, hostOrMac) { UseShellExecute = true });
-            return new RemoteAccessResult { Launched = true, Command = $"{_winboxPath} {hostOrMac}" };
+            psi.ArgumentList.Add(hostOrMac);
+            if (!string.IsNullOrWhiteSpace(username))
+            {
+                psi.ArgumentList.Add(username);
+            }
+
+            Process.Start(psi);
+            return new RemoteAccessResult { Launched = true, Command = $"{winbox} {hostOrMac}" };
         }
         catch (Exception ex)
         {
-            return new RemoteAccessResult { Launched = false, Command = $"{_winboxPath} {hostOrMac}", Error = ex.Message };
+            return new RemoteAccessResult { Launched = false, Command = $"{winbox} {hostOrMac}", Error = ex.Message };
         }
     }
 
@@ -139,65 +166,5 @@ public sealed class RemoteAccessService : IRemoteAccessService
         {
             return false;
         }
-    }
-
-    private static string? LocateWinbox()
-    {
-        // 1) No PATH (nome nativo ou .exe).
-        foreach (var name in new[] { "winbox", "winbox64", "winbox.exe", "winbox64.exe" })
-        {
-            var inPath = FindOnPath(name);
-            if (inPath is not null)
-            {
-                return inPath;
-            }
-        }
-
-        // 2) Locais comuns de instalação.
-        var candidates = new List<string>();
-        if (IsWindows)
-        {
-            var pf = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            var pfx86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-            candidates.Add(Path.Combine(pf, "winbox.exe"));
-            candidates.Add(Path.Combine(pfx86, "winbox.exe"));
-        }
-        else
-        {
-            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            candidates.Add(Path.Combine(home, ".local", "bin", "winbox"));
-            candidates.Add(Path.Combine(home, "winbox", "winbox.exe"));
-            candidates.Add("/opt/winbox/winbox.exe");
-            candidates.Add("/usr/local/bin/winbox");
-        }
-
-        return candidates.FirstOrDefault(File.Exists);
-    }
-
-    private static string? FindOnPath(string exe)
-    {
-        var pathVar = Environment.GetEnvironmentVariable("PATH");
-        if (string.IsNullOrEmpty(pathVar))
-        {
-            return null;
-        }
-
-        var sep = IsWindows ? ';' : ':';
-        foreach (var dir in pathVar.Split(sep, StringSplitOptions.RemoveEmptyEntries))
-        {
-            try
-            {
-                var full = Path.Combine(dir, exe);
-                if (File.Exists(full))
-                {
-                    return full;
-                }
-            }
-            catch
-            {
-                // ignora entradas inválidas no PATH
-            }
-        }
-        return null;
     }
 }

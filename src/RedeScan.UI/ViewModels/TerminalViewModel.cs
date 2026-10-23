@@ -93,6 +93,9 @@ public partial class TerminalViewModel : ViewModelBase
         }
     }
 
+    private readonly List<string> _history = new();
+    private int _historyIndex;
+
     [RelayCommand]
     private async Task SendAsync()
     {
@@ -101,10 +104,83 @@ public partial class TerminalViewModel : ViewModelBase
             return;
         }
 
-        // Envia o comando com quebra de linha (como pressionar Enter).
-        var cmd = CommandInput;
+        // Envia o comando com quebra de linha (como pressionar Enter). O eco
+        // aparece na tela porque o próprio servidor devolve o que recebe.
+        var cmd = CommandInput ?? string.Empty;
         CommandInput = string.Empty;
-        await _session.SendAsync(cmd + "\n");
+        if (cmd.Length > 0 && (_history.Count == 0 || _history[^1] != cmd))
+        {
+            _history.Add(cmd);
+        }
+
+        _historyIndex = _history.Count;
+        try
+        {
+            await _session.SendAsync(cmd + "\r");
+        }
+        catch (Exception ex)
+        {
+            Status = $"Falha ao enviar: {ex.Message}";
+        }
+    }
+
+    /// <summary>Envia teclas especiais: "tab" (completar) e "ctrl-c" (interromper).</summary>
+    [RelayCommand]
+    private async Task SendKeyAsync(string? key)
+    {
+        if (_session is null || !IsConnected)
+        {
+            return;
+        }
+
+        var data = key switch
+        {
+            "tab" => CommandInput + "\t",
+            "ctrl-c" => "\u0003",
+            _ => null
+        };
+        if (data is null)
+        {
+            return;
+        }
+
+        if (key == "tab")
+        {
+            CommandInput = string.Empty;
+        }
+
+        try
+        {
+            await _session.SendAsync(data);
+        }
+        catch (Exception ex)
+        {
+            Status = $"Falha ao enviar: {ex.Message}";
+        }
+    }
+
+    /// <summary>Seta para cima: comando anterior do histórico.</summary>
+    public void HistoryPrevious()
+    {
+        if (_history.Count == 0)
+        {
+            return;
+        }
+
+        _historyIndex = Math.Max(0, _historyIndex - 1);
+        CommandInput = _history[_historyIndex];
+    }
+
+    /// <summary>Seta para baixo: próximo comando do histórico.</summary>
+    public void HistoryNext()
+    {
+        if (_history.Count == 0)
+        {
+            return;
+        }
+
+        _historyIndex = Math.Min(_history.Count, _historyIndex + 1);
+        CommandInput = _historyIndex < _history.Count ? _history[_historyIndex] : string.Empty;
     }
 
     [RelayCommand]
@@ -124,9 +200,10 @@ public partial class TerminalViewModel : ViewModelBase
     private void OnOutput(string text)
     {
         // Evento vem de thread de background: marshala para a UI.
+        var clean = AnsiFilter.Clean(text);
         Dispatcher.UIThread.Post(() =>
         {
-            _buffer.Append(text);
+            AnsiFilter.AppendWithBackspace(_buffer, clean);
             // Limita o histórico para não crescer indefinidamente.
             if (_buffer.Length > 200_000)
             {
@@ -156,4 +233,47 @@ public partial class TerminalViewModel : ViewModelBase
             _session = null;
         }
     }
+}
+
+/// <summary>
+/// Limpa a saída do shell para exibição em texto simples: remove sequências
+/// ANSI (cores, posicionamento, título da janela) e normaliza quebras de linha.
+/// </summary>
+public static partial class AnsiFilter
+{
+    public static string Clean(string text)
+    {
+        var s = AnsiRegex().Replace(text, string.Empty);
+        s = s.Replace("\r\n", "\n");
+        // \r sozinho (redesenho de linha) vira nada para não duplicar texto.
+        s = s.Replace("\r", string.Empty);
+        // Outros caracteres de controle, exceto \n, \t e backspace.
+        return ControlRegex().Replace(s, string.Empty);
+    }
+
+    /// <summary>Aplica backspaces (\b) apagando o caractere anterior do buffer.</summary>
+    public static void AppendWithBackspace(StringBuilder buffer, string text)
+    {
+        foreach (var ch in text)
+        {
+            if (ch == '\b')
+            {
+                if (buffer.Length > 0 && buffer[^1] != '\n')
+                {
+                    buffer.Length--;
+                }
+            }
+            else
+            {
+                buffer.Append(ch);
+            }
+        }
+    }
+
+    // CSI (ESC [ ... letra), OSC (ESC ] ... BEL/ST) e escapes de 2 caracteres.
+    [System.Text.RegularExpressions.GeneratedRegex(@"\x1B\[[0-?]*[ -/]*[@-~]|\x1B\][^\x07\x1B]*(\x07|\x1B\\)|\x1B[@-Z\\-_]")]
+    private static partial System.Text.RegularExpressions.Regex AnsiRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"[\x00-\x07\x0B\x0C\x0E-\x1F\x7F]")]
+    private static partial System.Text.RegularExpressions.Regex ControlRegex();
 }

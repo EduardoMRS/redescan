@@ -3,49 +3,76 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
+             xmlns:models="clr-namespace:RedeScan.Core.Models;assembly=RedeScan.Core"
              mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="560"
              x:Class="RedeScan.UI.Views.BrowserView"
              x:DataType="vm:BrowserViewModel">
 
     <DockPanel>
-        <!-- Barra de endereço -->
-        <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,12" Padding="10">
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBox Text="{Binding Address}" Width="360" Watermark="https://…"
-                         VerticalAlignment="Center" CornerRadius="8" />
-                <Button Content="➜ Ir" Classes="accent" Command="{Binding NavigateCommand}" />
-                <ComboBox ItemsSource="{Binding Routers}"
-                          SelectedItem="{Binding SelectedRouter}"
-                          Width="220" VerticalAlignment="Center"
-                          PlaceholderText="🖧 Roteadores da rede…">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding DisplayLabel}" TextTrimming="CharacterEllipsis" />
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-                <Button Content="↗ Abrir no sistema" Command="{Binding OpenInSystemBrowserCommand}" />
-            </StackPanel>
+        <!-- Barra de endereço: a caixa de URL ocupa o espaço livre e o resto quebra linha se faltar -->
+        <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,10" Padding="8">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" Margin="0,0,6,0">
+                    <Button Content="◀" ToolTip.Tip="Voltar" Command="{Binding BackCommand}" />
+                    <Button Content="▶" ToolTip.Tip="Avançar" Command="{Binding ForwardCommand}" />
+                    <Button Content="⟳" ToolTip.Tip="Recarregar" Command="{Binding ReloadCommand}" />
+                </StackPanel>
+                <TextBox Grid.Column="1" Text="{Binding Address}" Watermark="https://…"
+                         VerticalAlignment="Center" CornerRadius="8" MinWidth="160"
+                         KeyDown="OnAddressKeyDown" />
+                <WrapPanel Grid.Column="2" Classes="toolbar inline" Margin="6,0,0,0">
+                    <Button Content="➜ Ir" Classes="accent" Command="{Binding NavigateCommand}" />
+                    <ComboBox ItemsSource="{Binding Routers}"
+                              SelectedItem="{Binding SelectedRouter}"
+                              Width="200" VerticalAlignment="Center"
+                              PlaceholderText="🖧 Roteadores da rede…">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="models:WebDevice">
+                                <TextBlock Text="{Binding DisplayLabel}" TextTrimming="CharacterEllipsis" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button Content="↗" ToolTip.Tip="Abrir no navegador do sistema"
+                            Command="{Binding OpenInSystemBrowserCommand}" />
+                </WrapPanel>
+            </Grid>
         </Border>
 
-        <!-- Host do conteúdo web: preenchido no code-behind quando o WebView
-             nativo está disponível; caso contrário, mostra o fallback abaixo. -->
-        <Panel Name="BrowserHost">
-            <Border Classes="card" Name="Fallback" Padding="24">
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12" MaxWidth="520">
-                    <Border Classes="pageIcon" Width="64" Height="64" HorizontalAlignment="Center">
-                        <TextBlock Text="🌐" FontSize="30" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                    </Border>
-                    <TextBlock Classes="h2" HorizontalAlignment="Center"
-                               Text="Abrir no navegador do sistema" />
-                    <TextBlock Classes="subtle" TextWrapping="Wrap" TextAlignment="Center"
-                               Text="Digite uma URL na barra de endereço acima e use o botão abaixo para abri-la no navegador padrão do seu sistema. O navegador embutido está disponível na versão completa para Windows." />
-                    <Button Content="Abrir no navegador do sistema"
-                            Classes="accent"
-                            HorizontalAlignment="Center"
-                            Command="{Binding OpenInSystemBrowserCommand}" />
-                </StackPanel>
-            </Border>
-        </Panel>
+        <!-- Certificado recusado (roteadores com HTTPS autoassinado) -->
+        <Border DockPanel.Dock="Top" Classes="card warn" IsVisible="{Binding ShowCertificateHint}">
+            <DockPanel>
+                <WrapPanel DockPanel.Dock="Right" Classes="toolbar inline" VerticalAlignment="Center">
+                    <Button Content="Tentar por HTTP" Command="{Binding TryHttpCommand}" />
+                    <Button Content="Aceitar certificados autoassinados" Classes="accent"
+                            Command="{Binding EnableIgnoreCertificatesCommand}" />
+                </WrapPanel>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,12,0" VerticalAlignment="Center"
+                           Text="A página HTTPS foi recusada por certificado inválido — comum em roteadores. Aceitar certificados autoassinados vale para todo o navegador embutido (pode ser desligado em Configurações)." />
+            </DockPanel>
+        </Border>
+
+        <TextBlock DockPanel.Dock="Bottom" Classes="subtle" Text="{Binding Status}" Margin="0,6,0,0"
+                   TextTrimming="CharacterEllipsis" />
+        <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" Height="2" MinHeight="2"
+                     Margin="0,0,0,4" IsVisible="{Binding IsLoading}" />
+
+        <!-- Host do conteúdo web (preenchido no code-behind) + fallback -->
+        <Border Classes="card" Padding="0" Margin="0" ClipToBounds="True">
+            <Panel Name="BrowserHost">
+                <Border Name="Fallback" Padding="24" IsVisible="{Binding IsWebViewUnavailable}">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12" MaxWidth="560">
+                        <Border Classes="pageIcon" Width="64" Height="64" HorizontalAlignment="Center">
+                            <TextBlock Text="🌐" FontSize="30" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <TextBlock Classes="h2" HorizontalAlignment="Center" TextAlignment="Center"
+                                   Text="Motor web do sistema indisponível" />
+                        <TextBlock Classes="subtle" TextWrapping="Wrap" TextAlignment="Center"
+                                   Text="{Binding UnavailableReason}" />
+                        <Button Content="Abrir no navegador do sistema" Classes="accent" HorizontalAlignment="Center"
+                                Command="{Binding OpenInSystemBrowserCommand}" />
+                    </StackPanel>
+                </Border>
+            </Panel>
+        </Border>
     </DockPanel>
 </UserControl>

@@ -37,8 +37,11 @@ public partial class NetworkScannerViewModel : ViewModelBase
     [ObservableProperty]
     private string _subnetPrefix = string.Empty;
 
+    // O botão "Escanear portas" ficava sempre desabilitado: o comando não era
+    // avisado quando a seleção mudava. NotifyCanExecuteChangedFor resolve.
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanScanPorts))]
+    [NotifyCanExecuteChangedFor(nameof(ScanPortsCommand))]
     private NetworkHost? _selectedHost;
 
     [ObservableProperty]
@@ -46,6 +49,8 @@ public partial class NetworkScannerViewModel : ViewModelBase
     private bool _isScanning;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanScanPorts))]
+    [NotifyCanExecuteChangedFor(nameof(ScanPortsCommand))]
     private bool _isScanningPorts;
 
     /// <summary>
@@ -455,32 +460,46 @@ public partial class NetworkScannerViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void OpenWinboxByIp(NetworkHost? host)
+    private Task OpenWinboxByIp(NetworkHost? host)
     {
         var target = host ?? SelectedHost;
         if (target is null)
         {
-            return;
+            Status = "Selecione um host para abrir no WinBox.";
+            return Task.CompletedTask;
         }
 
-        var r = _remote.OpenWinbox(target.IpAddress);
-        Status = r.Launched ? $"Winbox (IP) aberto para {target.IpAddress}." : $"Winbox: {r.Error}";
+        return LaunchWinboxAsync(target.IpAddress, "IP");
     }
 
     [RelayCommand]
-    private void OpenWinboxByMac(NetworkHost? host)
+    private Task OpenWinboxByMac(NetworkHost? host)
     {
         var target = host ?? SelectedHost;
         // Prefere o MAC da inspeção; cai no MAC do host, se houver.
         var mac = HostDetails?.MacAddress ?? target?.MacAddress;
         if (string.IsNullOrWhiteSpace(mac))
         {
-            Status = "MAC desconhecido — rode a Inspeção primeiro para conectar o Winbox por MAC.";
-            return;
+            Status = "MAC desconhecido — rode a Inspeção primeiro para conectar o WinBox por MAC.";
+            return Task.CompletedTask;
         }
 
-        var r = _remote.OpenWinbox(mac);
-        Status = r.Launched ? $"Winbox (MAC) aberto para {mac}." : $"Winbox: {r.Error}";
+        return LaunchWinboxAsync(mac, "MAC");
+    }
+
+    /// <summary>
+    /// Abre o WinBox; se não estiver instalado, baixa a versão oficial da
+    /// MikroTik (verificada por SHA-256) mostrando o progresso no status.
+    /// </summary>
+    private async Task LaunchWinboxAsync(string target, string kind)
+    {
+        Status = _remote.IsWinboxAvailable
+            ? $"Abrindo WinBox ({kind}) para {target}…"
+            : "WinBox não encontrado — baixando a versão oficial da MikroTik…";
+        var progress = new Progress<ToolDownloadProgress>(p => Status = p.Message);
+        var r = await _remote.OpenWinboxAsync(target, progress: progress);
+        IsWinboxAvailable = _remote.IsWinboxAvailable;
+        Status = r.Launched ? $"WinBox ({kind}) aberto para {target}." : $"WinBox: {r.Error}";
     }
 
     /// <summary>Procura, nos serviços inspecionados, a porta de um serviço pelo nome.</summary>

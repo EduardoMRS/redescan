@@ -41,6 +41,16 @@ public partial class App : Application
         // Se nenhum head configurou o container (ex.: Android), monta o padrão.
         Services ??= Composition.BuildServiceProvider();
 
+        // Exceções na thread de UI: registra (arquivo + console) e mantém o app
+        // vivo em vez de fechar sem aviso.
+        Avalonia.Threading.Dispatcher.UIThread.UnhandledException += (_, e) =>
+        {
+            RedeScan.Core.Diagnostics.AppLog.WriteCrash("UIThread", e.Exception);
+            e.Handled = true;
+        };
+
+        Controls.VideoSurface.VideoService = Services.GetService<RedeScan.Core.Services.Media.IVideoService>();
+
         MainWindowViewModel mainViewModel;
         try
         {

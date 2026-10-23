@@ -67,6 +67,10 @@
                              Watermark="router (gateway da rede) ou uma URL, ex.: https://fast.com" />
                     <TextBlock Classes="subtle" FontSize="11" TextWrapping="Wrap"
                                Text="Use 'router' para abrir direto no gateway da rede detectada, ou informe uma URL leve de sua preferência." />
+                    <CheckBox IsChecked="{Binding BrowserIgnoreCertificateErrors}" Margin="0,6,0,0"
+                              Content="Aceitar certificados HTTPS autoassinados (roteadores)" />
+                    <TextBlock Classes="subtle" FontSize="11" TextWrapping="Wrap"
+                               Text="Muitos roteadores usam HTTPS com certificado próprio. Ativar isto vale para todos os sites abertos no navegador embutido e reduz a proteção do HTTPS — deixe desligado se não precisar." />
                 </StackPanel>
             </Border>
 
@@ -84,6 +88,29 @@
                         <NumericUpDown Value="{Binding PortScanEnd}" Minimum="1" Maximum="65535"
                                        Increment="1" Width="140" FormatString="0" />
                     </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Monitor de acessos -->
+            <TextBlock Text="Monitor de acessos" Classes="h2" />
+            <Border Classes="card">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="Atualizar a cada" VerticalAlignment="Center" />
+                    <NumericUpDown Value="{Binding AccessMonitorInterval}" Minimum="1" Maximum="30"
+                                   Increment="1" Width="120" FormatString="0" />
+                    <TextBlock Text="segundo(s)" VerticalAlignment="Center" />
+                </StackPanel>
+            </Border>
+
+            <!-- Diagnóstico -->
+            <TextBlock Text="Logs e diagnóstico" Classes="h2" />
+            <Border Classes="card">
+                <StackPanel Spacing="6">
+                    <TextBlock TextWrapping="Wrap" Classes="subtle"
+                               Text="Em caso de erro, um relatório crash-*.log é gravado nesta pasta. Iniciando pelo terminal (ex.: redescan --verbose ou sudo redescan) o log também aparece no console." />
+                    <SelectableTextBlock Text="{Binding LogFolder}" FontFamily="monospace" TextWrapping="Wrap" />
+                    <Button Content="📂 Abrir pasta de logs" Command="{Binding OpenLogFolderCommand}"
+                            HorizontalAlignment="Left" />
                 </StackPanel>
             </Border>
 

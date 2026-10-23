@@ -8,7 +8,7 @@ O projeto tem **dois workflows** separados no GitHub Actions:
 | **Release (deploy manual)** — `release.yml` | **manual** (botão *Run workflow*) ou ao enviar uma **tag `v*`** | builda todas as variantes e publica a **GitHub Release**. |
 
 Ou seja: o dia a dia (push/PR) é rápido e barato — só checa se o código compila e
-passa nos testes. O build pesado (binários, pacotes Full ~400 MB) só acontece quando
+passa nos testes. O build dos binários e instaladores só acontece quando
 **você** decide publicar.
 
 ## Publicar — opção 1: por tag
@@ -28,25 +28,25 @@ com nome automático.
 ## O que entra na Release
 
 ### Portátil (leve) — recomendada para a maioria
-Um único arquivo, sem navegador embutido (usa "abrir no sistema" para web):
+Um único arquivo. Usa o motor web e o ffmpeg que já existirem no sistema (se faltar o
+ffmpeg, o app oferece baixar com um clique):
 
 - `RedeScan-Linux-x86_64.AppImage` — portátil universal do Linux
   (`chmod +x *.AppImage && ./RedeScan-Linux-x86_64.AppImage`)
 - `RedeScan-Windows-x64.exe` — executável único para Windows (não precisa instalar)
 - `RedeScan-Android.apk` — APK (debug-signed)
 
-### Full (com motor web + vídeo) — maior (~400 MB)
-Pacote `.zip` com **navegador CEF** e **vídeo LibVLC** embutidos (vários arquivos):
+### Full — instaladores que baixam as dependências na instalação
+- `RedeScan-Full-Windows-x64.exe` — instalador (Inno Setup). Durante a instalação baixa o
+  **WebView2 Runtime** (se faltar) e o **ffmpeg** (verificado por SHA-256) para `{app}\ffmpeg`.
+- `RedeScan-Full-Linux-x64.deb` — `sudo apt install ./RedeScan-Full-Linux-x64.deb`; o apt
+  instala `libwebkit2gtk-4.1-0`, GTK3, `ffmpeg` e `iproute2`.
+- `RedeScan-Full-Linux-x86_64.rpm` — `sudo dnf install ./RedeScan-Full-Linux-x86_64.rpm`;
+  o dnf instala `webkit2gtk4.1`, `gtk3`, `ffmpeg-free` (ou `ffmpeg`) e `iproute`.
 
-- `RedeScan-Full-Windows-x64.zip`
-- `RedeScan-Full-Linux-Ubuntu-x64.zip`  (base Debian/Ubuntu)
-- `RedeScan-Full-Linux-Fedora-x64.zip`  (base Fedora/RHEL)
-
-Descompacte e rode o `RedeScan`/`RedeScan.exe` de dentro da pasta.
-
-> **Por que duas variantes de Linux Full?** O libvlc é dependência do sistema e difere
-> entre famílias (apt no Ubuntu, dnf no Fedora). Geramos um pacote em cada base para
-> maximizar a compatibilidade do vídeo RTSP.
+> Validado em containers limpos: Ubuntu 22.04, Ubuntu 24.04 e Fedora 40 instalam o pacote
+> e todas as dependências. Use `apt install`/`dnf install` (não `dpkg -i`/`rpm -i`, que
+> não baixam dependências).
 
 ## Corrigindo uma tag errada
 
@@ -59,10 +59,13 @@ git push origin :refs/tags/v1.0.0
 
 - O **APK** é assinado com a chave de **debug** (para testes). Publicar na Play Store
   exigiria uma *keystore* própria (guardada em GitHub Secrets, fora do repo).
-- No **Android**, o navegador integrado agora é **embutido** usando o WebView nativo do
-  sistema (`android.webkit.WebView`) — não o CEF (que é desktop-only). O APK já traz isso.
-- A variante **Full** não é single-file/AppImage porque o CEF precisa de arquivos
-  soltos (libcef, locales, processo auxiliar).
+- O navegador embutido usa o motor web do próprio sistema em todas as plataformas
+  (WebView2, WebKitGTK, `android.webkit.WebView`) — nada de Chromium empacotado.
+- O vídeo das câmeras usa o **ffmpeg** como processo separado. No Fedora, o `ffmpeg-free`
+  do repositório oficial pode não decodificar H.264 de algumas câmeras; nesse caso instale
+  o `ffmpeg` do RPM Fusion.
+- O instalador Windows é validado no CI (job `validate-windows-installer`) compilando o
+  `.iss` num container Wine — o que confere sintaxe e script, mas não executa a instalação.
 
 ---
 

@@ -103,8 +103,9 @@ jobs:
           if-no-files-found: ignore
 
   # ===========================================================================
-  # FULL (motor web CEF + vídeo LibVLC): instaladores nativos por plataforma —
-  # setup.exe (Inno Setup) no Windows, .deb no Ubuntu/Debian, .rpm no Fedora/RHEL.
+  # FULL: instaladores nativos que baixam as dependências na instalação —
+  # setup.exe (Inno Setup: WebView2 + ffmpeg) no Windows, .deb (apt) no
+  # Ubuntu/Debian e .rpm (dnf) no Fedora/RHEL (WebKitGTK + ffmpeg).
   # ===========================================================================
   full-windows:
     name: Full — Windows (setup.exe)
@@ -117,11 +118,11 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - name: Publicar pacote Full (CEF + LibVLC)
+      - name: Publicar pacote Full
         run: >
           dotnet publish src/RedeScan.Desktop/RedeScan.Desktop.csproj
           --configuration Release --runtime win-x64 --self-contained true
-          -p:EnableNativeMedia=true -p:PublishSingleFile=false
+          -p:PublishSingleFile=false
           -p:DebugType=none -p:DebugSymbols=false
           --output ./full/win-x64
       # Instalador via Inno Setup (iscc já vem pré-instalado no runner Windows).
@@ -150,23 +151,11 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - name: Instalar libvlc (apt)
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        run: |
-          sudo apt-get update
-          # noninteractive + -o prompts para evitar travar num diálogo (tzdata,
-          # etc.); --no-install-recommends enxuga o download. libvlc-dev traz os
-          # headers; o runtime do VLC vem do pacote libvlc5 (dependência do .deb).
-          sudo apt-get install -y --no-install-recommends \
-            -o Dpkg::Options::="--force-confdef" \
-            -o Dpkg::Options::="--force-confold" \
-            libvlc-dev libvlc5
-      - name: Publicar pacote Full (CEF + LibVLC)
+      - name: Publicar pacote Full
         run: >
           dotnet publish src/RedeScan.Desktop/RedeScan.Desktop.csproj
           --configuration Release --runtime linux-x64 --self-contained true
-          -p:EnableNativeMedia=true -p:PublishSingleFile=false
+          -p:PublishSingleFile=false
           -p:DebugType=none -p:DebugSymbols=false
           --output ./full/linux-x64
       - name: Gerar instalador .deb
@@ -185,24 +174,24 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-      # libvlc + utilitários + rpm-build via dnf. O SDK do .NET vem SEMPRE do
+      # Utilitários + rpm-build via dnf. O SDK do .NET vem SEMPRE do
       # script oficial: o pacote dnf é da banda 8.0.1xx, que não satisfaz o
       # global.json (8.0.4xx). O script respeita o global.json.
       - name: Instalar dependências (dnf)
-        run: dnf -y install vlc-devel vlc-libs rpm-build findutils libicu krb5-libs tar which curl
+        run: dnf -y install rpm-build findutils libicu krb5-libs tar which curl
       - name: Instalar .NET 8 SDK (script oficial, banda 8.0.4xx)
         run: |
           curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
           bash /tmp/dotnet-install.sh --channel 8.0 --install-dir /usr/lib/dotnet
           ln -sf /usr/lib/dotnet/dotnet /usr/bin/dotnet
           dotnet --info
-      - name: Publicar pacote Full (CEF + LibVLC)
+      - name: Publicar pacote Full
         env:
           DOTNET_ROOT: /usr/lib/dotnet
         run: >
           /usr/lib/dotnet/dotnet publish src/RedeScan.Desktop/RedeScan.Desktop.csproj
           --configuration Release --runtime linux-x64 --self-contained true
-          -p:EnableNativeMedia=true -p:PublishSingleFile=false
+          -p:PublishSingleFile=false
           -p:DebugType=none -p:DebugSymbols=false
           --output ./full/fedora-x64
       - name: Gerar instalador .rpm
@@ -214,7 +203,7 @@ jobs:
 
   # ===========================================================================
   # ANDROID: APK (debug-signed). O navegador no Android usa "abrir no sistema"
-  # (o WebView nativo embutido é item futuro; o CEF é desktop-only).
+  # (o navegador usa o WebView do próprio Android).
   # ===========================================================================
   android-apk:
     name: APK (Android)

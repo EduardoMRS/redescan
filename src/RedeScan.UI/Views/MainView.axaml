@@ -26,21 +26,23 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Rodapé: alternar tema -->
-                <Button DockPanel.Dock="Bottom"
-                        Classes="nav"
-                        Command="{Binding ToggleThemeCommand}"
-                        Margin="12,2,12,16">
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <TextBlock Text="🎨" FontSize="16" />
-                        <TextBlock Text="Alternar tema" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
+                <!-- Rodapé: Configurações fixo no fim do menu (o tema fica lá dentro) -->
+                <Border DockPanel.Dock="Bottom" BorderThickness="0,1,0,0"
+                        BorderBrush="{DynamicResource RsHairline}" Padding="8,6,8,12">
+                    <Button Classes="nav" Classes.active="{Binding IsSettingsActive}"
+                            Command="{Binding OpenSettingsCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{Binding SettingsPage.Icon}" FontSize="16" Width="22"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding SettingsPage.Title}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </Border>
 
                 <!-- Navegação (ListBox dá o destaque do item selecionado) -->
                 <ListBox Classes="nav"
                          ItemsSource="{Binding Pages}"
-                         SelectedItem="{Binding CurrentPage}"
+                         SelectedItem="{Binding SelectedMenuPage}"
                          Background="Transparent"
                          BorderThickness="0"
                          Padding="8,8">

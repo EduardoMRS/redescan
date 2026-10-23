@@ -1,0 +1,80 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:RedeScan.UI.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
+             x:Class="RedeScan.UI.Views.AccessMonitorView"
+             x:DataType="vm:AccessMonitorViewModel">
+
+    <DockPanel>
+        <!-- Controles -->
+        <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <Button Content="▶ Iniciar" Classes="accent" Command="{Binding StartCommand}"
+                    IsVisible="{Binding IsStopped}" />
+            <Button Content="⏸ Parar" Command="{Binding StopCommand}" IsVisible="{Binding IsRunning}" />
+            <TextBox Text="{Binding FilterText}" Width="230" Watermark="🔍 Filtrar IP, porta ou processo…" />
+            <CheckBox Content="Só entradas" IsChecked="{Binding OnlyInbound}" />
+            <CheckBox Content="Ocultar portas em escuta" IsChecked="{Binding HideListening}" />
+            <CheckBox Content="Ocultar loopback" IsChecked="{Binding HideLoopback}" />
+            <Button Content="🧹 Limpar histórico" Command="{Binding ClearHistoryCommand}" />
+            <Button Content="📤 Exportar CSV" Click="OnExportClick" />
+        </WrapPanel>
+
+        <StackPanel DockPanel.Dock="Bottom" Spacing="2" Margin="0,8,0,0">
+            <TextBlock Classes="subtle" Text="{Binding Summary}" />
+            <TextBlock Classes="subtle" Text="{Binding Status}" TextWrapping="Wrap" />
+            <TextBlock Classes="subtle" FontSize="11" Text="{Binding PrivilegeHint}" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Grid RowDefinitions="*,6,220">
+            <!-- Conexões ao vivo -->
+            <DataGrid Grid.Row="0" ItemsSource="{Binding Connections}" IsReadOnly="True"
+                      CanUserReorderColumns="True" CanUserSortColumns="True">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Sentido" Binding="{Binding DirectionLabel}" Width="100" />
+                    <DataGridTextColumn Header="Proto" Binding="{Binding Protocol}" Width="60" />
+                    <DataGridTextColumn Header="Local (esta máquina)" Binding="{Binding Local}" Width="190" />
+                    <DataGridTextColumn Header="Remoto" Binding="{Binding Remote}" Width="190" />
+                    <DataGridTextColumn Header="Estado" Binding="{Binding State}" Width="100" />
+                    <DataGridTextColumn Header="Processo" Binding="{Binding Process}" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <GridSplitter Grid.Row="1" Background="Transparent" ResizeDirection="Rows" />
+
+            <!-- Histórico e quem acessou -->
+            <Grid Grid.Row="2" ColumnDefinitions="*,10,320">
+                <Border Grid.Column="0" Classes="card" Padding="8" Margin="0">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Classes="h2" Margin="0,0,0,4"
+                                   Text="Conexões novas (histórico)" />
+                        <DataGrid ItemsSource="{Binding Events}" IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Hora" Binding="{Binding TimeLabel}" Width="80" />
+                                <DataGridTextColumn Header="Sentido" Binding="{Binding Entry.DirectionLabel}" Width="95" />
+                                <DataGridTextColumn Header="Remoto" Binding="{Binding Entry.Remote}" Width="170" />
+                                <DataGridTextColumn Header="Local" Binding="{Binding Entry.Local}" Width="160" />
+                                <DataGridTextColumn Header="Processo" Binding="{Binding Entry.Process}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+
+                <Border Grid.Column="2" Classes="card" Padding="8" Margin="0">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Classes="h2" Margin="0,0,0,4"
+                                   Text="Quem acessou esta máquina" />
+                        <DataGrid ItemsSource="{Binding Remotes}" IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="IP" Binding="{Binding Address}" Width="*" />
+                                <DataGridTextColumn Header="Portas" Binding="{Binding Ports}" Width="90" />
+                                <DataGridTextColumn Header="Visto" Binding="{Binding LastSeenLabel}" Width="70" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</UserControl>

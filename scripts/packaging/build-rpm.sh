@@ -48,7 +48,15 @@ Release:        1
 Summary:        RedeScan - análise e teste de redes
 License:        MIT
 BuildArch:      x86_64
-Recommends:     vlc
+# Dependências baixadas pelo dnf na instalação (navegador embutido, vídeo e
+# monitor de acessos). Instale com: sudo dnf install ./RedeScan-Full-Linux-x86_64.rpm
+Requires:       webkit2gtk4.1
+Requires:       gtk3
+Requires:       (ffmpeg-free or ffmpeg)
+Requires:       iproute
+Requires:       libicu
+Recommends:     NetworkManager
+Recommends:     openssh-clients
 AutoReqProv:    no
 
 %description
@@ -62,8 +70,10 @@ câmeras RTSP, navegador integrado e terminal SSH.
 /usr/share/icons/hicolor/256x256/apps/redescan.png
 
 %post
-# Garante o bit de execução do binário principal.
+# Bit de execução e pasta de logs gravável por qualquer usuário (sticky bit).
 chmod +x /opt/redescan/RedeScan || true
+mkdir -p /opt/redescan/logs && chmod 1777 /opt/redescan/logs || true
+echo "RedeScan instalado. Para iniciar com log no terminal: redescan --verbose"
 EOF
 
 echo ">> Gerando RPM"

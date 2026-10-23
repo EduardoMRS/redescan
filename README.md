@@ -20,11 +20,15 @@ SSH — tudo num lugar só. Roda em **Windows, Linux e Android**.
   teste de estresse.
 - **Wi-Fi** — lista as redes ao redor com sinal, canal e banda, e mostra quais canais
   estão congestionados.
-- **Câmeras RTSP** — organiza suas câmeras em grade por grupo. Importa e exporta a mesma
-  lista do CentralMonitor (`rtspList.json`).
-- **Navegador integrado** — abre a interface web de roteadores e ONUs sem sair do app.
-- **Acesso remoto** — SSH, Telnet e **Winbox** (por IP ou MAC) direto do scanner, além de
-  um terminal SSH embutido que funciona até no celular.
+- **Câmeras RTSP** — assista até 6 câmeras ao vivo lado a lado, com prévia de cada uma na
+  lista, busca e filtro por grupo. Importa e exporta a lista do CentralMonitor (`rtspList.json`).
+- **Navegador integrado** — abre a interface web de roteadores e ONUs sem sair do app, com
+  atalho para alternar entre os roteadores encontrados na rede.
+- **Acesso remoto** — SSH, Telnet e **WinBox** (por IP ou MAC) direto do scanner, além de
+  um terminal SSH embutido que funciona até no celular. Se o WinBox não estiver instalado,
+  o app baixa a versão oficial da MikroTik pra você.
+- **Monitor de acessos** — mostra quem está acessando esta máquina, em qual porta e por
+  qual programa, com histórico e exportação em CSV.
 
 ---
 
@@ -43,7 +47,7 @@ Tem duas opções:
 - **Android:** `RedeScan-Android.apk` — instale no aparelho (precisa permitir "apps de
   fontes desconhecidas").
 
-### Completa (com navegador e vídeo embutidos) — instalador de verdade
+### Completa — instalador que já deixa tudo pronto
 - **Windows:** `RedeScan-Full-Windows-x64.exe` — instalador; duplo clique e siga o assistente.
 - **Ubuntu/Debian:** `RedeScan-Full-Linux-x64.deb`
   ```bash
@@ -54,9 +58,11 @@ Tem duas opções:
   sudo dnf install ./RedeScan-Full-Linux-x86_64.rpm
   ```
 
-> A versão **Completa** traz o navegador e o vídeo das câmeras embutidos (por isso é
-> maior). A **Portátil** é menor e usa o navegador/player do seu sistema. Escolha a que
-> preferir — as duas têm as mesmas ferramentas de rede.
+> A versão **Completa** instala junto o que o app usa por baixo: o motor web do sistema
+> (WebView2 no Windows, WebKitGTK no Linux) e o **ffmpeg**, que mostra o vídeo das
+> câmeras. No Linux, use o `apt`/`dnf` como acima para ele baixar essas dependências.
+> A **Portátil** usa o que já existir no sistema e, se faltar o ffmpeg, oferece baixar
+> com um clique. As duas têm as mesmas ferramentas.
 
 O app avisa sozinho quando sai uma versão nova. 🙂
 
@@ -71,6 +77,16 @@ Câmeras e atalhos são salvos no seu perfil, nunca no app nem em nenhum servido
 
 As senhas das câmeras ficam apenas nesse arquivo local e são usadas só na hora de abrir o
 stream. Nada de credencial escondida no código.
+
+## Algo deu errado?
+O app guarda um log em `logs/` na pasta onde está instalado (ou em
+`~/.config/redescan/logs` / `%APPDATA%\redescan\logs` quando a pasta do app não é
+gravável). Se ele fechar por um erro, fica lá um `crash-*.log` com os detalhes. Abrindo
+pelo terminal, o log aparece na tela também:
+```bash
+redescan --verbose        # ou: sudo redescan
+```
+Em **Configurações → Logs e diagnóstico** tem um botão que abre essa pasta.
 
 ---
 

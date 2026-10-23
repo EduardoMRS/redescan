@@ -12,11 +12,11 @@
         <!-- PING -->
         <TabItem Header="Ping">
             <DockPanel Margin="0,12,0,0">
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
+                <WrapPanel Classes="toolbar" DockPanel.Dock="Top">
                     <TextBox Text="{Binding PingTarget}" Width="200" Watermark="host ou IP" />
                     <Button Content="Iniciar" Command="{Binding StartPingCommand}" IsVisible="{Binding !IsPinging}" />
                     <Button Content="Parar" Command="{Binding StartPingCommand}" IsVisible="{Binding IsPinging}" />
-                </StackPanel>
+                </WrapPanel>
                 <TextBlock DockPanel.Dock="Top" Classes="subtle" Text="{Binding PingStats}" Margin="0,0,0,8" />
                 <Border DockPanel.Dock="Top" Classes="card" Height="110" Margin="0,0,0,8">
                     <ctl:SparklineControl Values="{Binding LatencySeries}"
@@ -38,12 +38,12 @@
         <!-- TRACEROUTE -->
         <TabItem Header="Traceroute">
             <DockPanel Margin="0,12,0,0">
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
+                <WrapPanel Classes="toolbar" DockPanel.Dock="Top">
                     <TextBox Text="{Binding TracerouteTarget}" Width="200" Watermark="host ou IP" />
                     <Button Content="Rastrear" Command="{Binding TracerouteCommand}" IsVisible="{Binding !IsTracing}" />
                     <Button Content="Parar" Command="{Binding TracerouteCommand}" IsVisible="{Binding IsTracing}" />
                     <ProgressBar IsIndeterminate="True" Width="120" IsVisible="{Binding IsTracing}" VerticalAlignment="Center" />
-                </StackPanel>
+                </WrapPanel>
                 <DataGrid ItemsSource="{Binding Hops}" IsReadOnly="True">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="#" Binding="{Binding HopNumber}" Width="50" />
@@ -80,10 +80,10 @@
                                 <TextBlock Grid.Row="2" Grid.Column="2" Text="Tam. pacote" VerticalAlignment="Center" Margin="12,0,0,0" />
                                 <NumericUpDown Grid.Row="2" Grid.Column="3" Value="{Binding LoadConfig.PacketSizeBytes}" Minimum="1" Maximum="65535" Margin="0,4" />
                             </Grid>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
+                            <WrapPanel Classes="toolbar">
                                 <Button Content="Iniciar teste" Command="{Binding StartLoadTestCommand}" IsVisible="{Binding !IsLoadTesting}" />
                                 <Button Content="Parar" Command="{Binding StartLoadTestCommand}" IsVisible="{Binding IsLoadTesting}" />
-                            </StackPanel>
+                            </WrapPanel>
                         </StackPanel>
                     </Border>
 

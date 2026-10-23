@@ -199,3 +199,17 @@ RedeScan/
 - [x] **App demorava demais / parecia não abrir (.deb e AppImage):** o `MainWindowViewModel` carregava as preferências no construtor com `LoadSettingsAsync().GetAwaiter().GetResult()` na UI thread durante o startup, prendendo a inicialização até o continuation async destravar. Adicionado `IConfigurationService.LoadSettings()` 100% síncrono (sem I/O async); o shell e o scanner passam a usá-lo. `OnFrameworkInitializationCompleted` agora tem try/catch que nunca deixa o processo vivo sem janela.
 - [x] **Stream RTSP não exibia nada (sem erro):** a `Media` era descartada (`using var`) logo após `Play()`, antes do stream abrir — tela preta silenciosa. Agora a `Media` vive até o `StopNative`. Adicionadas opções `:rtsp-tcp` (força TCP; Wowza/NAT) e `:network-caching=1000`, e handler `EncounteredError` para dar feedback real de falha.
 - [x] Testes de regressão para `LoadSettings()` síncrono (13 testes no total).
+
+---
+### 🛠️ v1.0.3 — correções do teste em Windows/Linux + monitor de acessos
+- [x] **Câmeras RTSP:** player trocado do LibVLC (no Ubuntu/Mint o libvlc não traz RTSP/live555; no Windows a superfície nativa não aparecia dentro da grade) pelo **ffmpeg** como processo separado, renderizado num `WriteableBitmap` (`VideoSurface`). Reconecta sozinho alternando TCP/UDP, mostra erros claros (401/403/404/recusado/tempo esgotado) e nunca trava a UI. Miniaturas reais na lista. Botão "Instalar ffmpeg" baixa a versão oficial se faltar.
+- [x] **Navegador embutido:** CEF substituído pelo `Avalonia.Controls.WebView` (MIT) — WebView2 no Windows, WebKitGTK no Linux. Voltar/avançar/recarregar, links de nova janela abrem na mesma aba, detecção de motor ausente com instrução, e opção (desligada por padrão) de aceitar certificados autoassinados de roteadores.
+- [x] **Terminal SSH:** comandos não chegavam ao servidor (o `ShellStream` só envia no `Flush`). Corrigido e validado contra um servidor SSH real. Enter capturado por handler tunnel, histórico (↑/↓), Tab, Ctrl+C, auto-rolagem e remoção de códigos ANSI.
+- [x] **WinBox:** se não estiver instalado, baixa o WinBox 4 oficial (Windows/Linux, SHA-256) e abre já conectando no IP/MAC.
+- [x] **Botão "Escanear portas":** ficava desabilitado (o comando não era notificado da seleção). Corrigido.
+- [x] **Menu lateral:** removido "Alternar tema" (fica em Configurações); Configurações fixo no fim do menu.
+- [x] **Monitor de acessos:** novo módulo — conexões e portas em escuta desta máquina com processo, sentido (entrada/saída), histórico de conexões novas, resumo "quem acessou" e exportação CSV (`ss` no Linux, `netstat -ano` no Windows, fallback .NET).
+- [x] **Botões fora da tela:** barras de ferramentas viraram `WrapPanel.toolbar` (quebram linha em janelas estreitas).
+- [x] **Instaladores Full baixam dependências:** .deb (`Depends`: WebKitGTK, GTK3, ffmpeg, iproute2), .rpm (`Requires`), setup.exe (WebView2 + ffmpeg via página de download do Inno). Validados em Ubuntu 22.04/24.04 e Fedora 40.
+- [x] **Log de falhas:** `AppLog` grava em `logs/` na pasta do app (fallback no perfil), arquivo por usuário, `crash-*.log` em exceções não tratadas, espelhado no console (`redescan --verbose`, `sudo redescan`; no Windows anexa ao console do terminal).
+- [ ] **Repaginação do layout (ícones/botões):** em andamento na branch `redesign/ui`.

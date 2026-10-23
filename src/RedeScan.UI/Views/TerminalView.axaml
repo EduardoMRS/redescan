@@ -8,37 +8,43 @@
              x:DataType="vm:TerminalViewModel">
 
     <DockPanel>
-        <!-- Barra de conexão -->
-        <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,10" Padding="10">
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBox Text="{Binding Host}" Width="150" Watermark="host/IP" VerticalAlignment="Center" />
-                <TextBox Text="{Binding Port}" Width="70" Watermark="porta" VerticalAlignment="Center" />
-                <TextBox Text="{Binding Username}" Width="120" Watermark="usuário" VerticalAlignment="Center" />
-                <TextBox Text="{Binding Password}" Width="130" Watermark="senha" PasswordChar="•" VerticalAlignment="Center" />
+        <!-- Barra de conexão (quebra linha em telas estreitas) -->
+        <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,10" Padding="10,10,10,4">
+            <WrapPanel Classes="toolbar inline">
+                <TextBox Text="{Binding Host}" Width="150" Watermark="host/IP" />
+                <TextBox Text="{Binding Port}" Width="70" Watermark="porta" />
+                <TextBox Text="{Binding Username}" Width="120" Watermark="usuário" />
+                <TextBox Text="{Binding Password}" Width="130" Watermark="senha" PasswordChar="•"
+                         KeyDown="OnPasswordKeyDown" />
                 <Button Content="🔌 Conectar" Classes="accent"
                         Command="{Binding ConnectCommand}" IsVisible="{Binding IsDisconnected}" />
                 <Button Content="⏏ Desconectar"
                         Command="{Binding DisconnectCommand}" IsVisible="{Binding IsConnected}" />
                 <Button Content="🧹 Limpar" Command="{Binding ClearOutputCommand}" />
-            </StackPanel>
+            </WrapPanel>
         </Border>
 
         <!-- Status -->
         <TextBlock DockPanel.Dock="Bottom" Classes="subtle" Text="{Binding Status}" Margin="0,8,0,0" TextWrapping="Wrap" />
 
-        <!-- Entrada de comando -->
-        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
-            <TextBox Text="{Binding CommandInput}" Watermark="comando + Enter"
-                     IsEnabled="{Binding IsConnected}"
-                     HorizontalAlignment="Stretch" Width="650"
-                     KeyDown="OnCommandKeyDown" />
-            <Button Content="Enviar" Command="{Binding SendCommand}" IsEnabled="{Binding IsConnected}" />
-        </StackPanel>
+        <!-- Entrada de comando: ocupa toda a largura -->
+        <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,8,0,0">
+            <TextBox Grid.Column="0" Name="CommandBox"
+                     Text="{Binding CommandInput}" Watermark="digite o comando e pressione Enter"
+                     FontFamily="monospace"
+                     IsEnabled="{Binding IsConnected}" />
+            <Button Grid.Column="1" Content="Enviar" Classes="accent" Margin="8,0,0,0"
+                    Command="{Binding SendCommand}" IsEnabled="{Binding IsConnected}" />
+            <Button Grid.Column="2" Content="Tab" Margin="6,0,0,0" ToolTip.Tip="Completar (Tab)"
+                    Command="{Binding SendKeyCommand}" CommandParameter="tab" IsEnabled="{Binding IsConnected}" />
+            <Button Grid.Column="3" Content="Ctrl+C" Margin="6,0,0,0" ToolTip.Tip="Interromper o comando"
+                    Command="{Binding SendKeyCommand}" CommandParameter="ctrl-c" IsEnabled="{Binding IsConnected}" />
+        </Grid>
 
         <!-- Saída do terminal -->
-        <Border Classes="card" Padding="0">
-            <ScrollViewer Name="OutputScroll">
-                <SelectableTextBlock Text="{Binding Output}"
+        <Border Classes="card" Padding="0" Margin="0" Background="#0D1117">
+            <ScrollViewer Name="OutputScroll" HorizontalScrollBarVisibility="Auto">
+                <SelectableTextBlock Text="{Binding Output}" Foreground="#D6DEE7"
                                      FontFamily="monospace" FontSize="12"
                                      Padding="10" TextWrapping="NoWrap" />
             </ScrollViewer>

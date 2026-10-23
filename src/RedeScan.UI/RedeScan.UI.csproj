@@ -5,14 +5,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <!-- Habilita mídia nativa (navegador CEF e vídeo LibVLC). Desligado por
-         padrão para manter o publish self-contained do CI leve e estável.
-         Ative com: dotnet build -p:EnableNativeMedia=true -->
-    <EnableNativeMedia Condition="'$(EnableNativeMedia)' == ''">false</EnableNativeMedia>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(EnableNativeMedia)' == 'true'">
-    <DefineConstants>$(DefineConstants);ENABLE_NATIVE_MEDIA</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,25 +17,12 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.3" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.3" />
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.2.3" />
+    <!-- Navegador embutido com o motor web do próprio sistema (MIT):
+         WebView2 no Windows, WebKitGTK no Linux. Substitui o CEF, que não
+         funcionava e ocupava ~400 MB nos pacotes Full. -->
+    <PackageReference Include="Avalonia.Controls.WebView" Version="11.4.1" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
-  </ItemGroup>
-
-  <!-- Dependências de mídia nativa (somente quando habilitadas).
-       - WebViewControl-Avalonia já traz os runtimes do CEF (Windows/Linux/macOS) via NuGet.
-       - LibVLCSharp fornece o binding gerenciado; os binários nativos do VLC
-         vêm do NuGet no Windows/macOS e do sistema (libvlc) no Linux. -->
-  <ItemGroup Condition="'$(EnableNativeMedia)' == 'true'">
-    <PackageReference Include="WebViewControl-Avalonia" Version="3.120.13" />
-    <PackageReference Include="LibVLCSharp.Avalonia" Version="3.9.2" />
-  </ItemGroup>
-
-  <!-- Binários nativos do VLC por plataforma (não existem no NuGet para Linux) -->
-  <ItemGroup Condition="'$(EnableNativeMedia)' == 'true' and $(RuntimeIdentifier.StartsWith('win'))">
-    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.24" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(EnableNativeMedia)' == 'true' and $(RuntimeIdentifier.StartsWith('osx'))">
-    <PackageReference Include="VideoLAN.LibVLC.Mac" Version="3.1.3.2" />
   </ItemGroup>
 
   <ItemGroup>

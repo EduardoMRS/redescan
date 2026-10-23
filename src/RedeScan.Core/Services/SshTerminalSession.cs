@@ -76,15 +76,19 @@ public sealed class SshTerminalSession : ISshTerminalSession
         Disconnected?.Invoke(null);
     }
 
-    public Task SendAsync(string data, CancellationToken ct = default)
+    public async Task SendAsync(string data, CancellationToken ct = default)
     {
         if (_shell is null)
         {
-            return Task.CompletedTask;
+            return;
         }
 
+        // O ShellStream do SSH.NET acumula as escritas num buffer interno e só
+        // envia ao servidor no Flush. Sem ele, o comando nunca saía da máquina
+        // (login funcionava, mas nada digitado chegava ao shell remoto).
         var bytes = Encoding.UTF8.GetBytes(data);
-        return _shell.WriteAsync(bytes, 0, bytes.Length, ct);
+        await _shell.WriteAsync(bytes, 0, bytes.Length, ct);
+        await _shell.FlushAsync(ct);
     }
 
     public void Disconnect()

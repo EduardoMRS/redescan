@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using RedeScan.Core.Services;
+using RedeScan.Core.Services.Media;
 using RedeScan.Core.Services.Wifi;
 
 namespace RedeScan.Core.Extensions;
@@ -18,6 +19,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IHostInspector, HostInspector>();
         services.AddSingleton<IWakeOnLanService, WakeOnLanService>();
         services.AddSingleton<IRtspListImporter, RtspListImporter>();
+        services.AddSingleton<IExternalToolService, ExternalToolService>();
+        services.AddSingleton<IVideoService, FfmpegVideoService>();
+        services.AddSingleton<IConnectionMonitorService, ConnectionMonitorService>();
         services.AddSingleton<IRemoteAccessService, RemoteAccessService>();
         services.AddSingleton<ISshTerminalFactory, SshTerminalFactory>();
         services.AddSingleton<ITftpServer, TftpServer>();
