@@ -4,7 +4,8 @@ namespace RedeScan.Core.Services;
 
 /// <summary>
 /// Verifica se há uma versão mais recente do RedeScan publicada no servidor de
-/// releases, comparando a versão instalada com o manifesto remoto (latest.json).
+/// releases, consultando a rota <c>/releases/{projeto}/latest</c> do portfólio
+/// e comparando com a versão instalada no assembly.
 /// </summary>
 public interface IUpdateService
 {

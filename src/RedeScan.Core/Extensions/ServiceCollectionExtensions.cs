@@ -26,6 +26,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISshTerminalFactory, SshTerminalFactory>();
         services.AddSingleton<ITftpServer, TftpServer>();
         services.AddSingleton<IUpdateService>(_ => new UpdateService());
+        services.AddSingleton<ILicenseService>(_ => new LicenseService());
         services.AddSingleton<IPortScannerService, PortScannerService>();
         services.AddSingleton<ILoadTestService, LoadTestService>();
         services.AddSingleton<IConfigurationService>(_ => new ConfigurationService(customConfigPath));

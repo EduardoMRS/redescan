@@ -24,7 +24,7 @@ public partial class DashboardViewModel : ViewModelBase, IDisposable
     private readonly IServiceProvider _services;
 
     // Rota do manifesto de atualização no servidor de releases.
-    private const string UpdateManifestUrl = "https://deveduardomrs.pro/d/redescan/release/latest.json";
+    private const string UpdateManifestUrl = "https://deveduardomrs.pro/releases/redescan/latest";
 
     private Timer? _autoTimer;
     private CancellationTokenSource? _scanCts;
@@ -53,6 +53,13 @@ public partial class DashboardViewModel : ViewModelBase, IDisposable
     // ---- Atualização automática ----
     [ObservableProperty] private bool _updateAvailable;
     [ObservableProperty] private string _updateMessage = string.Empty;
+
+    /// <summary>Status textual da última verificação (feedback ao usuário).</summary>
+    [ObservableProperty] private string _updateStatus = string.Empty;
+
+    /// <summary>True enquanto uma verificação manual está em andamento.</summary>
+    [ObservableProperty] private bool _isCheckingUpdate;
+
     private string? _updateUrl;
 
     public DashboardViewModel(
@@ -81,19 +88,67 @@ public partial class DashboardViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private async Task CheckForUpdatesAsync()
     {
-        var result = await _updateService.CheckAsync(UpdateManifestUrl);
-        if (result.UpdateAvailable)
+        await RunUpdateCheckAsync(manual: false);
+    }
+
+    /// <summary>
+    /// Verificação acionada manualmente pelo usuário: além de mostrar o banner
+    /// quando há atualização, dá feedback textual ("você está atualizado",
+    /// "falha ao verificar") — assim fica claro que a checagem aconteceu.
+    /// </summary>
+    [RelayCommand]
+    private async Task CheckForUpdatesManualAsync()
+    {
+        await RunUpdateCheckAsync(manual: true);
+    }
+
+    private async Task RunUpdateCheckAsync(bool manual)
+    {
+        if (IsCheckingUpdate)
         {
-            _updateUrl = result.DownloadUrl;
-            var obrig = result.Mandatory ? " (obrigatória)" : string.Empty;
-            await Dispatcher.UIThread.InvokeAsync(() =>
+            return;
+        }
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            IsCheckingUpdate = true;
+            if (manual)
             {
+                UpdateStatus = "Verificando atualizações…";
+            }
+        });
+
+        var result = await _updateService.CheckAsync(UpdateManifestUrl);
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            IsCheckingUpdate = false;
+
+            if (result.UpdateAvailable)
+            {
+                _updateUrl = result.DownloadUrl;
+                var obrig = result.Mandatory ? " (obrigatória)" : string.Empty;
                 UpdateMessage = $"Nova versão {result.LatestVersion} disponível{obrig}. " +
                                 $"Você está na {result.CurrentVersion}.";
                 UpdateAvailable = true;
-            });
-        }
-        // Falha (sem rede, manifesto ausente) é silenciosa: não incomoda o usuário.
+                UpdateStatus = string.Empty;
+            }
+            else if (!string.IsNullOrEmpty(result.Error))
+            {
+                // Falha (sem rede, timeout). No modo automático fica silencioso;
+                // no manual, informa para o usuário saber que tentou.
+                UpdateStatus = manual
+                    ? $"Não foi possível verificar agora: {result.Error}"
+                    : string.Empty;
+            }
+            else
+            {
+                // Sem atualização: feedback apenas na verificação manual.
+                UpdateStatus = manual
+                    ? $"Você já está na versão mais recente ({result.CurrentVersion})."
+                    : string.Empty;
+            }
+        });
     }
 
     /// <summary>Abre o link de download da atualização no navegador do sistema.</summary>
@@ -106,7 +161,7 @@ public partial class DashboardViewModel : ViewModelBase, IDisposable
         }
         else
         {
-            _systemBrowser.Open("https://deveduardomrs.pro/d/redescan/release/");
+            _systemBrowser.Open("https://deveduardomrs.pro/projeto/redescan");
         }
     }
 

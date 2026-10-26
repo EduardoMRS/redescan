@@ -24,6 +24,16 @@
                 </Grid>
             </Border>
 
+            <!-- Verificação manual de atualização + status -->
+            <Grid ColumnDefinitions="Auto,*" Margin="0,2,0,2">
+                <controls:IconButton Grid.Column="0" Icon="Update" Text="Verificar atualizações"
+                        Command="{Binding CheckForUpdatesManualCommand}"
+                        IsEnabled="{Binding !IsCheckingUpdate}" HorizontalAlignment="Left" />
+                <TextBlock Grid.Column="1" Classes="subtle" VerticalAlignment="Center" Margin="10,0,0,0"
+                           TextWrapping="Wrap" Text="{Binding UpdateStatus}"
+                           IsVisible="{Binding UpdateStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            </Grid>
+
             <Border Classes="card">
                 <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto">
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Host" Classes="subtle" />

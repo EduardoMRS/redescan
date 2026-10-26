@@ -44,6 +44,13 @@ public class AppSettings
     /// <summary>Intervalo de atualização do monitor de acessos (segundos).</summary>
     public int AccessMonitorIntervalSeconds { get; set; } = 2;
 
+    /// <summary>
+    /// Código de licença da instalação. Opcional: quando preenchido, é enviado
+    /// no heartbeat de atividade (/page/{projeto}/license) e o servidor responde
+    /// 201; quando vazio, o heartbeat é anônimo e o servidor responde 200.
+    /// </summary>
+    public string LicenseCode { get; set; } = string.Empty;
+
     public static AppSettings CreateDefault()
     {
         return new AppSettings

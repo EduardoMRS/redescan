@@ -2,45 +2,38 @@ using System.Text.Json.Serialization;
 
 namespace RedeScan.Core.Models;
 
+// ── Resposta da rota /releases/{projeto}/latest (deveduardomrs.pro) ──────────
+
 /// <summary>
-/// Manifesto de atualização publicado no servidor (ex.:
-/// https://deveduardomrs.pro/d/redescan/release/latest.json).
+/// Manifesto de release retornado pela rota
+/// <c>https://deveduardomrs.pro/releases/redescan/latest</c>.
+/// Espelha os dados do GitHub Releases API com cache servidor.
 /// </summary>
-public sealed class UpdateManifest
+public sealed class GithubReleaseManifest
 {
-    /// <summary>Versão mais recente disponível, ex.: "1.2.0".</summary>
-    [JsonPropertyName("version")]
-    public string Version { get; set; } = "0.0.0";
-
-    /// <summary>Notas da versão (opcional).</summary>
-    [JsonPropertyName("notes")]
-    public string? Notes { get; set; }
-
-    /// <summary>Data de publicação (opcional, ISO 8601).</summary>
-    [JsonPropertyName("published")]
-    public string? Published { get; set; }
-
-    /// <summary>
-    /// Se true, a atualização é obrigatória (a UI pode insistir). Opcional.
-    /// </summary>
-    [JsonPropertyName("mandatory")]
-    public bool Mandatory { get; set; }
-
-    /// <summary>Links de download por plataforma/variante.</summary>
-    [JsonPropertyName("downloads")]
-    public UpdateDownloads Downloads { get; set; } = new();
+    [JsonPropertyName("project")]      public string Project     { get; set; } = string.Empty;
+    [JsonPropertyName("owner")]        public string Owner       { get; set; } = string.Empty;
+    [JsonPropertyName("version")]      public string Version     { get; set; } = "0.0.0";
+    [JsonPropertyName("name")]         public string? Name       { get; set; }
+    [JsonPropertyName("prerelease")]   public bool Prerelease    { get; set; }
+    [JsonPropertyName("draft")]        public bool Draft         { get; set; }
+    [JsonPropertyName("published_at")] public string? PublishedAt { get; set; }
+    [JsonPropertyName("release_url")]  public string? ReleaseUrl { get; set; }
+    [JsonPropertyName("body")]         public string? Body       { get; set; }
+    [JsonPropertyName("assets")]       public List<GithubReleaseAsset> Assets { get; set; } = [];
 }
 
-/// <summary>URLs de download por alvo. Preencha o que fizer sentido.</summary>
-public sealed class UpdateDownloads
+/// <summary>Um asset (arquivo) de um release do GitHub.</summary>
+public sealed class GithubReleaseAsset
 {
-    [JsonPropertyName("windows")] public string? Windows { get; set; }
-    [JsonPropertyName("windowsFull")] public string? WindowsFull { get; set; }
-    [JsonPropertyName("linux")] public string? Linux { get; set; }         // AppImage
-    [JsonPropertyName("linuxFullUbuntu")] public string? LinuxFullUbuntu { get; set; }
-    [JsonPropertyName("linuxFullFedora")] public string? LinuxFullFedora { get; set; }
-    [JsonPropertyName("android")] public string? Android { get; set; }     // APK
+    [JsonPropertyName("name")]         public string Name        { get; set; } = string.Empty;
+    [JsonPropertyName("size")]         public long Size          { get; set; }
+    [JsonPropertyName("content_type")] public string ContentType { get; set; } = string.Empty;
+    [JsonPropertyName("download_url")] public string DownloadUrl { get; set; } = string.Empty;
+    [JsonPropertyName("downloads")]    public int Downloads      { get; set; }
 }
+
+// ── Resultado interno da verificação ─────────────────────────────────────────
 
 /// <summary>Resultado da verificação de atualização.</summary>
 public sealed record UpdateCheckResult

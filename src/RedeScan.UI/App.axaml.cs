@@ -51,6 +51,11 @@ public partial class App : Application
 
         Controls.VideoSurface.VideoService = Services.GetService<RedeScan.Core.Services.Media.IVideoService>();
 
+        // Heartbeat de atividade / licença: reporta ao servidor que esta
+        // instância foi aberta. Best-effort e totalmente assíncrono — nunca
+        // bloqueia nem derruba a inicialização da UI.
+        ReportLicenseActivity();
+
         MainWindowViewModel mainViewModel;
         try
         {
@@ -181,6 +186,44 @@ public partial class App : Application
             if (icons is { Count: > 0 })
             {
                 icons[0].ToolTipText = $"RedeScan — {n.Title}: {n.Message}";
+            }
+        });
+    }
+
+    // -------------------------------------------------- Heartbeat de licença
+    /// <summary>
+    /// Dispara (fire-and-forget) o envio do heartbeat de atividade para o
+    /// servidor de licenças. Lê o código de licença das configurações, quando
+    /// houver. Qualquer falha é apenas registrada em log.
+    /// </summary>
+    private static void ReportLicenseActivity()
+    {
+        var licenseService = Services?.GetService<RedeScan.Core.Services.ILicenseService>();
+        if (licenseService is null)
+        {
+            return;
+        }
+
+        string? licenseCode = null;
+        try
+        {
+            var config = Services?.GetService<RedeScan.Core.Services.IConfigurationService>();
+            licenseCode = config?.LoadSettings().LicenseCode;
+        }
+        catch
+        {
+            // Sem config legível: segue com heartbeat anônimo.
+        }
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await licenseService.ReportActivityAsync(licenseCode);
+            }
+            catch (Exception ex)
+            {
+                RedeScan.Core.Diagnostics.AppLog.Warn("Heartbeat de licença falhou: " + ex.Message);
             }
         });
     }
